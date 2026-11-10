@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dossiê de continuidade — protótipo de IA para passagem de gestão municipal</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#F3F5F4; --paper:#FFFFFF; --ink:#1C2A2E; --ink-2:#4B5B60; --ink-3:#7E8B8F; --line:#D6DDDB; --line-2:#E9EEEC;
+  --ia:#2E4ED6; --ia-bg:#E8ECFB; --pessoa:#3F7A4A; --pessoa-bg:#E6F1E7; --auto:#5E6E73; --auto-bg:#EBEFEE;
+  --red:#B5473A; --red-bg:#F8E6E3; --amb:#B9711A; --amb-bg:#FBF0E1; --grn:#3F7A4A; --grn-bg:#E6F1E7; --mark:#FFF1B8;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --serif:"Source Serif 4",Georgia,serif;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){ color-scheme:dark;
+  --bg:#15201F; --paper:#1D2A29; --ink:#E6EBE9; --ink-2:#B4C0BD; --ink-3:#86948F; --line:#2F3F3D; --line-2:#263533;
+  --ia:#8FA3F0; --ia-bg:#243055; --pessoa:#8DC995; --pessoa-bg:#223A28; --auto:#AAB8B4; --auto-bg:#2A3836;
+  --red:#F0948A; --red-bg:#43272A; --amb:#E6A95C; --amb-bg:#3E3220; --grn:#8DC995; --grn-bg:#223A28; --mark:#4A4320; } }
+:root[data-theme="dark"]{ color-scheme:dark;
+  --bg:#15201F; --paper:#1D2A29; --ink:#E6EBE9; --ink-2:#B4C0BD; --ink-3:#86948F; --line:#2F3F3D; --line-2:#263533;
+  --ia:#8FA3F0; --ia-bg:#243055; --pessoa:#8DC995; --pessoa-bg:#223A28; --auto:#AAB8B4; --auto-bg:#2A3836;
+  --red:#F0948A; --red-bg:#43272A; --amb:#E6A95C; --amb-bg:#3E3220; --grn:#8DC995; --grn-bg:#223A28; --mark:#4A4320; }
+html{height:100%; scroll-padding-top:env(safe-area-inset-top,0px)} *,*::before,*::after{box-sizing:inherit}
+body{margin:0; min-height:100%; background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{margin:0 0 .4rem; line-height:1.2; font-weight:600; letter-spacing:-.01em} h1{font-size:1.5rem} h2{font-size:1.15rem} h3{font-size:.98rem} h4{font-size:.88rem; color:var(--ink-2)}
+p{margin:0 0 .7rem; max-width:70ch} a{color:var(--ia)} button{font:inherit} ul,ol{max-width:70ch}
+header.bar{display:flex; align-items:center; gap:1rem; padding:.55rem 1.2rem; border-bottom:1px solid var(--line); background:var(--paper); position:sticky; top:env(safe-area-inset-top,0px); z-index:20}
+header .org{font-size:.76rem; color:var(--ink-3); line-height:1.2; white-space:nowrap} header .org b{display:block; color:var(--ink); font-size:.95rem; font-weight:600}
+header nav{margin-left:auto; display:flex; gap:.15rem; overflow-x:auto; scrollbar-width:thin}
+header nav a{text-decoration:none; color:var(--ink-2); padding:.4rem .65rem; border-radius:6px; font-size:.88rem; white-space:nowrap}
+header nav a:hover{background:var(--line-2); color:var(--ink)} header nav a[aria-current="page"]{background:var(--ia-bg); color:var(--ia); font-weight:500}
+header nav .sep{width:1px; background:var(--line); margin:.3rem .3rem}
+.proto{font-size:.7rem; color:var(--amb); background:var(--amb-bg); padding:.1rem .45rem; border-radius:4px; font-weight:600; white-space:nowrap}
+main{padding:1.4rem 1.4rem 4rem; max-width:1180px; width:100%; margin:0 auto}
+section.view{display:none} section.view.on{display:block}
+.tag{display:inline-block; font-size:.7rem; font-weight:600; padding:.05rem .45rem; border-radius:4px; vertical-align:middle; white-space:nowrap}
+.tag.ia{background:var(--ia-bg); color:var(--ia)} .tag.pessoa{background:var(--pessoa-bg); color:var(--pessoa)} .tag.auto{background:var(--auto-bg); color:var(--auto)} .tag.gov{background:var(--amb-bg); color:var(--amb)}
+.tag.r{background:var(--red-bg); color:var(--red)} .tag.a{background:var(--amb-bg); color:var(--amb)} .tag.g{background:var(--grn-bg); color:var(--grn)}
+.card{background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:1rem 1.15rem}
+.muted{color:var(--ink-3); font-size:.85rem}
+.two{display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:1.2rem; align-items:start}
+.cols3{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem}
+.cols2{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem}
+.note{border-left:3px solid var(--amb); background:var(--amb-bg); padding:.65rem .9rem; border-radius:0 8px 8px 0; margin:1rem 0; max-width:70ch} .note.ia{border-color:var(--ia); background:var(--ia-bg)} .note p:last-child{margin:0}
+.btn{background:var(--ia); color:#fff; border:0; border-radius:8px; padding:.5rem .9rem; cursor:pointer; font-weight:500; display:inline-flex; gap:.4rem; align-items:center}
+.btn[disabled]{opacity:.5; cursor:default} .btn.sec{background:var(--paper); color:var(--ink); border:1px solid var(--line)} .btn.ok{background:var(--pessoa)} .btn.sm{padding:.3rem .65rem; font-size:.85rem}
+select,textarea,input[type=text]{font:inherit; color:var(--ink); background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:.45rem .65rem}
+textarea{width:100%; min-height:4rem; resize:vertical}
+.src{display:inline-block; font-size:.7rem; font-weight:600; color:var(--ia); background:var(--ia-bg); border:0; border-radius:4px; padding:0 .4rem; margin:0 .12rem; cursor:pointer; vertical-align:baseline}
+.src:hover,.src:focus-visible{text-decoration:underline}
+.nc{color:var(--amb); font-weight:500}
+table{border-collapse:collapse; width:100%; font-size:.88rem} th,td{text-align:left; padding:.5rem .6rem; border-bottom:1px solid var(--line); vertical-align:top} th{font-size:.76rem; color:var(--ink-2); font-weight:600; background:var(--line-2)}
+tr.row{cursor:pointer} tr.row:hover td,tr.row:focus-visible td{background:var(--line-2)}
+/* início */
+.hero{display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:1.4rem; align-items:start}
+.hero h1{font-size:1.75rem; max-width:22ch} .hero .lead{font-size:1.05rem; color:var(--ink-2)}
+.steps{counter-reset:s; list-style:none; padding:0; margin:.6rem 0}
+.steps li{display:grid; grid-template-columns:2rem minmax(0,1fr); gap:.6rem; padding:.55rem 0; border-top:1px solid var(--line-2); font-size:.92rem}
+.steps li::before{counter-increment:s; content:counter(s); font-family:var(--serif); font-size:1.25rem; color:var(--ink-3); line-height:1}
+.steps b{font-weight:600} .steps small{display:block; color:var(--ink-2)}
+.legend{display:flex; gap:.9rem; flex-wrap:wrap; font-size:.84rem; color:var(--ink-2); margin:.6rem 0}
+.tour{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:.6rem; margin-top:.8rem}
+.tour a{display:block; text-decoration:none; color:inherit; background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:.7rem .85rem} .tour a:hover{border-color:var(--ia)}
+.tour a b{display:block; color:var(--ia); font-size:.92rem} .tour a span{font-size:.8rem; color:var(--ink-2)}
+/* carteira */
+.kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:.8rem; margin:.8rem 0 1.1rem}
+.kpis .card{padding:.65rem .9rem} .kpis b{display:block; font-size:1.5rem; font-weight:600; line-height:1.1} .kpis span{font-size:.78rem; color:var(--ink-2)}
+.filters{display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:.7rem; align-items:center}
+.filters button{border:1px solid var(--line); background:var(--paper); color:var(--ink-2); border-radius:999px; padding:.25rem .8rem; cursor:pointer; font-size:.84rem}
+.filters button[aria-pressed="true"]{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+.alerts{font-size:.8rem; color:var(--ink-2)}
+/* ficha */
+.ficha dl{display:grid; grid-template-columns:10rem minmax(0,1fr); gap:.55rem 1rem; margin:.6rem 0 0; font-size:.92rem} .ficha dt{color:var(--ink-3); font-size:.78rem; padding-top:.1rem} .ficha dd{margin:0}
+.tasks{list-style:none; padding:0; margin:.4rem 0 0} .tasks li{display:flex; gap:.6rem; align-items:flex-start; padding:.5rem 0; border-top:1px solid var(--line-2); font-size:.9rem}
+.tasks input{margin-top:.25rem; width:1rem; height:1rem} .tasks .who{display:block; font-size:.78rem; color:var(--ink-3)} .tasks li.done span.t{text-decoration:line-through; color:var(--ink-3)} .tasks .onde{display:block; font-size:.78rem; color:var(--pessoa)}
+.sel{display:flex; gap:.6rem; align-items:center; margin-bottom:.8rem; flex-wrap:wrap}
+.empty{color:var(--ink-3); font-size:.88rem; padding:.6rem 0}
+/* chat */
+.chat{display:flex; flex-direction:column; gap:.6rem; max-height:50vh; overflow:auto; padding:.2rem 0}
+.msg{border-radius:10px; padding:.65rem .85rem; font-size:.9rem; white-space:pre-wrap; line-height:1.45; max-width:100%}
+.msg.q{background:var(--line-2); align-self:flex-end; max-width:88%; border-bottom-right-radius:3px} .msg.a{background:var(--ia-bg); border-left:3px solid var(--ia)} .msg.a.abst{background:var(--amb-bg); border-left-color:var(--amb)}
+.msg .meta{display:block; font-size:.72rem; color:var(--ink-3); margin-top:.4rem; white-space:normal}
+.chips{display:flex; gap:.35rem; flex-wrap:wrap; margin:.5rem 0} .chips button{border:1px solid var(--line); background:var(--paper); border-radius:999px; padding:.22rem .7rem; font-size:.8rem; cursor:pointer; color:var(--ink-2)} .chips button:hover{border-color:var(--ia); color:var(--ia)}
+details.mask{margin:.5rem 0; font-size:.85rem} details.mask summary{cursor:pointer; color:var(--ia)} details.mask pre{background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:.6rem .8rem; font-size:.77rem; white-space:pre-wrap; max-height:15rem; overflow:auto}
+mark{background:var(--mark); padding:0 .15em; border-radius:2px}
+.log{font-size:.8rem; color:var(--ink-2); padding-left:1.1rem} .log li{margin:.25rem 0}
+/* drawer de documentos */
+.drawer{position:fixed; inset:0; z-index:40; display:none} .drawer.on{display:block}
+.drawer .back{position:absolute; inset:0; background:rgba(0,0,0,.35)}
+.drawer .panel{position:absolute; top:0; right:0; bottom:0; width:min(560px,100%); background:var(--paper); border-left:1px solid var(--line); padding:1.1rem 1.3rem; overflow:auto; padding-top:calc(1.1rem + env(safe-area-inset-top,0px))}
+.drawer .panel h2{font-size:1.05rem; padding-right:2.5rem} .drawer .close{position:absolute; top:.8rem; right:.9rem; border:1px solid var(--line); background:var(--paper); border-radius:8px; padding:.25rem .6rem; cursor:pointer; top:calc(.8rem + env(safe-area-inset-top,0px))}
+.doctext{font-family:var(--serif); font-size:1rem; line-height:1.6; margin-top:.8rem; white-space:pre-wrap}
+.cls{font-size:.72rem; font-weight:600; border-radius:4px; padding:.05rem .4rem; white-space:nowrap} .cls.pub{background:var(--grn-bg); color:var(--grn)} .cls.int{background:var(--auto-bg); color:var(--auto)} .cls.pes{background:var(--red-bg); color:var(--red)}
+.doclist li{margin:.35rem 0; font-size:.88rem} .doclist button{background:none; border:0; color:var(--ia); cursor:pointer; padding:0; text-align:left} .doclist button:hover{text-decoration:underline}
+/* toast e dialog */
+.toast{position:fixed; left:50%; bottom:calc(1.2rem + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:.55rem .9rem; border-radius:8px; font-size:.88rem; z-index:50; opacity:0; pointer-events:none; transition:opacity .15s} .toast.on{opacity:1}
+dialog{border:1px solid var(--line); border-radius:12px; padding:1.2rem 1.3rem; max-width:460px; background:var(--paper); color:var(--ink)} dialog::backdrop{background:rgba(0,0,0,.35)}
+dialog h3{margin-bottom:.3rem} dialog .acts{display:flex; gap:.5rem; justify-content:flex-end; margin-top:.9rem}
+/* blueprint */
+.bpwrap{overflow:auto} .bp{display:grid; grid-template-columns:158px repeat(6,minmax(150px,1fr)); gap:5px; min-width:1080px; font-size:.78rem}
+.bp .ph{background:var(--ink); color:var(--bg); padding:.5rem .7rem .5rem .9rem; font-weight:600; position:relative; clip-path:polygon(0 0,calc(100% - 10px) 0,100% 50%,calc(100% - 10px) 100%,0 100%,8px 50%)} .bp .ph:first-of-type{clip-path:polygon(0 0,calc(100% - 10px) 0,100% 50%,calc(100% - 10px) 100%,0 100%)}
+.bp .ph small{display:block; font-weight:400; opacity:.8}
+.bp .lane{border-radius:8px 0 0 8px; padding:.55rem .7rem; font-weight:600; display:flex; flex-direction:column; justify-content:center; gap:.15rem; border-left:4px solid var(--ink-3); background:var(--paper); border-top:1px solid var(--line); border-bottom:1px solid var(--line)}
+.bp .lane small{font-weight:400; color:var(--ink-3)}
+.bp .lane.u{border-left-color:var(--ink)} .bp .lane.fe{border-left-color:var(--ink-2)} .bp .lane.i{border-left-color:var(--ia)} .bp .lane.au{border-left-color:var(--auto)} .bp .lane.bs{border-left-color:var(--pessoa)} .bp .lane.gv{border-left-color:var(--amb)}
+.bp .cell{background:var(--paper); border:1px solid var(--line); border-radius:6px; padding:.5rem .6rem; min-height:4.8rem; line-height:1.35}
+.bp .cell.ia{border-color:var(--ia); background:var(--ia-bg)} .bp .cell.auto{background:var(--auto-bg)} .bp .cell.gov{background:var(--amb-bg); border-color:var(--amb)} .bp .cell.pes{background:var(--pessoa-bg)} .bp .cell.off{background:transparent; border-style:dashed; color:var(--ink-3)}
+.bp .cell .art{display:block; margin-top:.3rem; font-size:.72rem; color:var(--ink-3)} .bp .cell .art::before{content:"artefato: "}
+.bp .vis{grid-column:1/-1; border-top:2px dashed var(--ink-3); position:relative; height:16px; margin:6px 0 2px} .bp .vis span{position:absolute; left:0; top:-10px; background:var(--bg); padding:0 .4rem .0rem 0; font-size:.72rem; color:var(--ink-3); font-weight:600}
+/* trajetória */
+.traj{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; margin:1rem 0}
+.traj .card{display:flex; flex-direction:column; gap:.4rem} .traj .card h3{font-size:1rem} .traj .lvl{font-family:var(--serif); font-size:.85rem; color:var(--ink-3)} .traj ul{padding-left:1.1rem; margin:.2rem 0; font-size:.88rem} .traj .q{font-size:.85rem; color:var(--ink-2); border-top:1px solid var(--line-2); padding-top:.5rem; margin-top:auto}
+.traj .card.cur{border-color:var(--ia); box-shadow:0 0 0 2px var(--ia-bg)}
+.arch{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:.8rem; margin:.8rem 0}
+.arch .card h4{color:var(--ink); margin-bottom:.25rem} .arch .card p{font-size:.86rem; margin-bottom:.25rem} .arch .card .papel{font-size:.74rem; color:var(--ink-3)}
+.road{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.6rem; margin:.8rem 0} .road .card{border-top:4px solid var(--line)} .road .card:nth-child(1){border-top-color:var(--ia)} .road .card:nth-child(2){border-top-color:var(--pessoa)} .road .card:nth-child(3){border-top-color:var(--amb)} .road ul{font-size:.86rem; padding-left:1.1rem}
+/* lgpd */
+.lg{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:.8rem; margin:.8rem 0} .lg .card p{font-size:.88rem; margin-bottom:.3rem}
+.rule{display:grid; grid-template-columns:1fr 1fr; gap:.8rem; margin:.6rem 0} .rule .card{border-top:4px solid var(--grn)} .rule .card.no{border-top-color:var(--red)} .rule ul{font-size:.88rem; padding-left:1.1rem; margin:.3rem 0}
+/* bastidores */
+pre.cmd{background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:.8rem .95rem; font-size:.83rem; line-height:1.5; white-space:pre-wrap; max-width:none}
+.grade{display:grid; grid-template-columns:1fr; gap:.5rem; margin:.8rem 0} .grade div{border:1px solid var(--line); background:var(--paper); border-radius:8px; padding:.7rem .95rem; font-size:.9rem} .grade b{display:block; font-size:.78rem; color:var(--ink-3); margin-bottom:.15rem} .ok{color:var(--grn); font-weight:600} .pend{color:var(--amb); font-weight:600}
+.subnav{display:flex; gap:.3rem; flex-wrap:wrap; margin:.6rem 0 1rem} .subnav button{border:1px solid var(--line); background:var(--paper); border-radius:8px; padding:.35rem .75rem; cursor:pointer; font-size:.86rem; color:var(--ink-2)} .subnav button[aria-pressed="true"]{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+.sub{display:none} .sub.on{display:block}
+footer{margin-top:3rem; font-size:.8rem; color:var(--ink-3); border-top:1px solid var(--line); padding-top:.8rem; max-width:70ch}
+:focus-visible{outline:2px solid var(--ia); outline-offset:2px}
+@media (prefers-reduced-motion:reduce){ .toast{transition:none} }
+@media (max-width:960px){ .two,.hero,.cols3,.cols2,.traj,.road,.rule{grid-template-columns:1fr} .kpis{grid-template-columns:repeat(2,1fr)} main{padding:1rem .8rem 3rem} .ficha dl{grid-template-columns:1fr} header.bar{flex-wrap:wrap; gap:.5rem} header nav{margin-left:0; width:100%} header .org{white-space:normal} }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="org"><b>Dossiê de continuidade</b>Prefeitura de Jatobá (SP) · Coordenação de Convênios · <span class="proto">protótipo · dados fictícios</span></div>
+  <nav aria-label="Seções">
+    <a href="#inicio">Início</a><span class="sep"></span>
+    <a href="#carteira">Carteira</a><a href="#ficha">Ficha</a><a href="#assistente">Assistente</a><a href="#passagem">Passagem</a><span class="sep"></span>
+    <a href="#blueprint">Blueprint</a><a href="#memoria">Memória</a><a href="#trajetoria">Trajetória</a><a href="#dados">LGPD</a><a href="#bastidores">Bastidores do teste</a>
+  </nav>
+</header>
+<main>
+
+<!-- ===================== INÍCIO ===================== -->
+<section class="view" id="v-inicio">
+  <div class="hero">
+    <div>
+      <h1>Quando o coordenador sai, para onde vai o que ele sabia?</h1>
+      <p class="lead">Este é um protótipo de sistema para passagem de gestão em prefeituras. Ele lê os documentos que a prefeitura já tem, monta um dossiê do que está em andamento, aponta o que não consta em nenhum documento e deixa a decisão com as pessoas. A inteligência artificial organiza e sinaliza; não decide nem publica.</p>
+      <p>O caso é fictício: Jatobá (SP), 42 mil habitantes, 14 convênios, coordenador exonerado em 3 de novembro de 2026 sem passagem formal. A data de referência é 10 de novembro de 2026. Nenhum dado, nome, órgão ou documento é real.</p>
+      <div class="legend">
+        <span><span class="tag ia">IA</span> inteligência artificial</span>
+        <span><span class="tag pessoa">Pessoa</span> decisão humana</span>
+        <span><span class="tag auto">Automação</span> gatilho sem IA (fase de piloto)</span>
+        <span><span class="tag gov">Governança</span> LGPD e controle</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Em cinco minutos</h3>
+      <ol class="steps">
+        <li><div><b>Veja a carteira.</b><small>As faixas vermelha, amarela e verde vêm de regras simples sobre datas e campos vazios. Aqui não há IA.</small></div></li>
+        <li><div><b>Abra a ficha do convênio 03 ou 07.</b><small>Quatro perguntas respondidas a partir dos documentos, com a fonte de cada afirmação e o que não consta marcado.</small></div></li>
+        <li><div><b>Pergunte ao assistente.</b><small>A IA responde em tempo real a partir dos seis documentos. Experimente “Quem é o coordenador hoje?”: a resposta correta é não saber.</small></div></li>
+        <li><div><b>Valide a passagem.</b><small>Quem fecha a passagem é quem assume, não quem sai.</small></div></li>
+        <li><div><b>Veja a aba Memória.</b><small>O que nenhum documento tem: quem sabe o quê, a entrevista com quem saiu, as decisões sem ata.</small></div></li>
+        <li><div><b>Leia a trajetória.</b><small>Do texto de baixa fidelidade a este painel, e deste à institucionalização no município.</small></div></li>
+      </ol>
+    </div>
+  </div>
+  <h2 style="margin-top:1.6rem">O que há em cada seção</h2>
+  <div class="tour">
+    <a href="#carteira"><b>Carteira</b><span>14 convênios, alertas e faixas calculados por regra</span></a>
+    <a href="#ficha"><b>Ficha</b><span>dossiê de um convênio, lacunas como tarefas, geração com IA</span></a>
+    <a href="#assistente"><b>Assistente</b><span>perguntas livres, resposta com fonte ou abstenção; registro de consultas</span></a>
+    <a href="#passagem"><b>Passagem</b><span>minuta de 30 dias e validação pela sucessora</span></a>
+    <a href="#blueprint"><b>Blueprint</b><span>gatilhos reais de uma prefeitura, fluxo em cinco fases, infraestrutura por porte</span></a>
+    <a href="#memoria"><b>Memória</b><span>mapa de conhecimento crítico, entrevista de passagem, registro de decisões</span></a>
+    <a href="#trajetoria"><b>Trajetória</b><span>baixa fidelidade, protótipo funcional, adoção institucional</span></a>
+    <a href="#dados"><b>LGPD</b><span>o que a IA vê, o que nunca vê, e por quê</span></a>
+    <a href="#bastidores"><b>Bastidores do teste</b><span>documentos, comandos, resultados observados e próximos passos</span></a>
+  </div>
+  <div class="note ia" style="margin-top:1.4rem"><p><strong>Por que “dossiê” e não “chatbot”.</strong> A falha mais cara numa passagem de gestão não é a lacuna; é a lacuna preenchida com algo plausível e errado. Por isso o centro do sistema é um registro estruturado, com fonte em cada linha e campos vazios visíveis. O assistente é a porta de entrada para esse registro, não o seu substituto.</p></div>
+</section>
+
+<!-- ===================== CARTEIRA ===================== -->
+<section class="view" id="v-carteira">
+  <h1>Carteira de convênios</h1>
+  <p class="muted">Situação em 10/11/2026. Faixa: dois alertas ou vigência vencida = vermelho; um alerta = amarelo; nenhum = verde. Calculado por regra, sem IA.</p>
+  <div class="kpis">
+    <div class="card"><b>14</b><span>convênios ativos</span></div>
+    <div class="card"><b id="k-red" style="color:var(--red)">–</b><span>em faixa vermelha</span></div>
+    <div class="card"><b id="k-60">–</b><span>com prazo em 60 dias</span></div>
+    <div class="card"><b id="k-lac">–</b><span>lacunas abertas</span></div>
+  </div>
+  <div class="filters" id="filters"><span class="muted">Mostrar:</span>
+    <button data-f="all" aria-pressed="true">Todos</button><button data-f="r" aria-pressed="false">Vermelho</button><button data-f="a" aria-pressed="false">Amarelo</button><button data-f="g" aria-pressed="false">Verde</button><button data-f="sem" aria-pressed="false">Sem responsável</button>
+  </div>
+  <div class="card" style="padding:0; overflow:auto">
+    <table id="tbl"><thead><tr><th>Nº</th><th>Objeto</th><th>Concedente</th><th>Vigência</th><th>Prestação de contas</th><th>Responsável</th><th>Faixa</th><th>Alertas</th></tr></thead><tbody></tbody></table>
+  </div>
+  <p class="muted" style="margin-top:.7rem">Clique numa linha para abrir a ficha. “Exonerado” vem da Portaria 212/2026; a planilha ainda traz o nome anterior, e o sistema mostra as duas coisas.</p>
+</section>
+
+<!-- ===================== FICHA ===================== -->
+<section class="view" id="v-ficha">
+  <div class="sel"><label for="selconv"><strong>Convênio</strong></label> <select id="selconv"></select> <span id="faixa"></span></div>
+  <div class="two">
+    <div>
+      <div class="card ficha" id="fichaCard"></div>
+      <div class="card" style="margin-top:1rem">
+        <h3>Lacunas deste convênio <span class="tag pessoa">tarefas para pessoas</span></h3>
+        <p class="muted">Cada “não consta” apontado pela IA vira uma tarefa com a pergunta a fazer e a quem. Para marcar como resolvida, informe onde o documento foi registrado: é isso que alimenta a base e fecha o laço.</p>
+        <ul class="tasks" id="tasks"></ul>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h3>Gerar ficha com IA <span class="tag ia">IA</span></h3>
+        <p class="muted">Monta a ficha deste convênio a partir dos seis documentos, com instrução de citar fonte e não inferir. Compare com a ficha fixa ao lado, produzida na execução documentada do teste.</p>
+        <button class="btn" id="btnGerar">Gerar agora</button>
+        <div id="gerado" class="msg a" style="display:none; margin-top:.8rem"></div>
+        <div id="valid" style="display:none; margin-top:.6rem">
+          <button class="btn ok" id="btnConfirm">Confirmar como responsável formal</button>
+          <p class="muted" style="margin-top:.4rem">No piloto, a confirmação grava autor, data e versão. Aqui, só marca a ficha como revisada.</p>
+        </div>
+      </div>
+      <div class="card" style="margin-top:1rem">
+        <h3>Documentos anexados a este processo</h3>
+        <ul class="doclist" id="fontes"></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== ASSISTENTE ===================== -->
+<section class="view" id="v-assistente">
+  <h1>Assistente de passagem <span class="tag ia">IA</span></h1>
+  <div class="two">
+    <div class="card">
+      <p class="muted">Pergunte sobre qualquer convênio. A IA responde só com base nos seis documentos, cita a fonte de cada afirmação e, quando não há fonte, diz “não consta” e indica a quem perguntar. Perguntas sem resposta entram na lista de lacunas da ficha.</p>
+      <div class="chips" id="sugest">
+        <button>Qual é o prazo da prestação de contas do convênio 03?</button>
+        <button>O aditivo do convênio 07 foi protocolado?</button>
+        <button>Quem é o coordenador de convênios hoje?</button>
+        <button>O que vence antes do fim de dezembro?</button>
+        <button>Quanto já foi pago no convênio 03?</button>
+        <button>Qual o telefone do fornecedor citado na ata?</button>
+      </div>
+      <div class="chat" id="chat"><div class="empty">Nenhuma pergunta ainda. Escolha uma sugestão ou escreva a sua.</div></div>
+      <form id="askForm" style="margin-top:.8rem; display:flex; gap:.5rem; align-items:flex-start">
+        <textarea id="q" placeholder="Escreva a pergunta…" aria-label="Pergunta"></textarea>
+        <button class="btn" id="btnAsk" type="submit">Perguntar</button>
+      </form>
+      <p class="muted" id="sampleState" style="margin-top:.5rem"></p>
+    </div>
+    <div>
+      <div class="card">
+        <h3>O que a IA recebe</h3>
+        <p class="muted">Instrução de papel fixa, mais os seis documentos tratados. Nomes de agentes públicos em atos oficiais ficam; dados de terceiros e contatos pessoais são removidos antes do envio. Veja a regra na aba LGPD.</p>
+        <details class="mask"><summary>Ver instrução de papel</summary><pre id="sysPrompt"></pre></details>
+        <details class="mask"><summary>Ver documentos como a IA os vê</summary><pre id="maskedDocs"></pre></details>
+      </div>
+      <div class="card" style="margin-top:1rem">
+        <h3>Registro de consultas <span class="tag gov">Governança</span></h3>
+        <p class="muted">Toda consulta fica registrada: quem, quando, pergunta, documentos lidos, origem da resposta.</p>
+        <ul class="log" id="auditLog"></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== PASSAGEM ===================== -->
+<section class="view" id="v-passagem">
+  <h1>Passagem de coordenação</h1>
+  <p class="muted">Aberta quando a Portaria 212/2026 exonerou o coordenador. Só fecha quando quem assume valida cada item: é ela quem diz se consegue continuar, não quem sai.</p>
+  <div class="two">
+    <div class="card">
+      <h3>Minuta dos próximos 30 dias <span class="tag ia">IA</span></h3>
+      <ol style="padding-left:1.2rem; font-size:.92rem; max-width:none">
+        <li><strong>Até 05/12</strong> — Convênio 03: confirmar com a SEDR o prazo (05/12 pelo e-mail, 15/12 pela planilha) e trabalhar com o mais curto <button class="src" data-doc="email">E-mail</button> <button class="src" data-doc="planilha">Planilha</button>; publicar os dados no portal da transparência e anexar o comprovante (IN 04/2025) <button class="src" data-doc="email">E-mail</button>.</li>
+        <li><strong>Até 29/11</strong> — Convênio 09: vigência encerrada em 30/09; verificar com Jonas Teixeira se a feira ocorreu e se há saldo <button class="src" data-doc="planilha">Planilha</button>.</li>
+        <li><strong>Até 30/11</strong> — Convênio 05: fim da vigência; prazo de prestação de contas não consta <button class="src" data-doc="planilha">Planilha</button>.</li>
+        <li><strong>Antes de 31/12</strong> — Convênio 07: confirmar se o aditivo decidido em março foi protocolado <button class="src" data-doc="ata">Ata</button>.</li>
+        <li><strong>Esta semana</strong> — pedir ao secretário a formalização de quem responde pela coordenação desde 05/11 <button class="src" data-doc="portaria">Portaria</button>; atualizar o checklist de 2023 <button class="src" data-doc="checklist">Checklist</button>.</li>
+      </ol>
+      <p class="muted">Minuta: vale como registro só depois da confirmação do responsável formal.</p>
+    </div>
+    <div class="card">
+      <h3>Validação por quem assume <span class="tag pessoa">Pessoa</span></h3>
+      <ul class="tasks" id="handover"></ul>
+      <p class="muted" style="margin-top:.6rem" id="hoState"></p>
+      <h3 style="margin-top:1rem">Dúvidas que ficaram</h3>
+      <form id="doubtForm" style="display:flex; gap:.5rem"><input type="text" id="doubt" placeholder="O que ficou sem resposta?" aria-label="Dúvida" style="flex:1"><button class="btn sec" type="submit">Registrar</button></form>
+      <ul class="log" id="doubts"></ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== BLUEPRINT ===================== -->
+<section class="view" id="v-blueprint">
+  <h1>Como o serviço funciona: gatilhos, fluxo e infraestrutura</h1>
+  <p class="muted">Numa prefeitura brasileira o sistema não pode depender de software novo. Ele precisa perceber eventos que já acontecem e deixam rastro: a portaria no diário oficial, o prazo no Transferegov, o arquivo salvo na pasta, o e-mail do concedente. Cada gatilho abaixo diz onde o evento acontece hoje, como o sistema o percebe, o que dispara e quem confirma.</p>
+
+  <h2>1. Mapa de gatilhos</h2>
+  <div class="card" style="padding:0; overflow:auto">
+  <table>
+    <thead><tr><th>Evento</th><th>Onde acontece hoje</th><th>Como o sistema percebe</th><th>O que dispara</th><th>Quem confirma</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Exoneração ou nomeação de responsável</strong></td><td>Portaria no Diário Oficial do Município (próprio, do estado ou de associação de municípios) e ato no RH</td><td>Leitura diária do diário oficial (RSS ou PDF) cruzada com a planilha de responsáveis <span class="tag auto">Automação</span></td><td>Abre a passagem; congela as fichas como “versão de passagem”; avisa secretário e quem assume; lista os processos do exonerado</td><td>Secretário <span class="tag pessoa">Pessoa</span></td></tr>
+      <tr><td><strong>Prazo de convênio se aproxima</strong></td><td>Transferegov (federal), sistema do concedente estadual, planilha interna</td><td>Rotina diária sobre a planilha ou exportação do Transferegov <span class="tag auto">Automação</span></td><td>Alerta a 60, 30 e 15 dias; verifica se há documento de prestação de contas na base; sem documento, alerta também a coordenação</td><td>Responsável do processo</td></tr>
+      <tr><td><strong>Comunicação do concedente</strong></td><td>E-mail institucional (em muitos municípios, conta gratuita); ofício em papel protocolado</td><td>Regra de caixa por remetente; sem e-mail institucional, digitalização no protocolo <span class="tag auto">Automação</span></td><td>Anexa à ficha; a IA extrai prazo e exigência como minuta <span class="tag ia">IA</span></td><td>Responsável do processo</td></tr>
+      <tr><td><strong>Reunião decide algo</strong></td><td>Ata em Word na pasta de rede; com frequência, só no grupo de WhatsApp</td><td>Arquivo salvo em pasta monitorada (Drive ou OneDrive) com nome padrão; sem ata, registro manual em três campos</td><td>A IA gera o registro de decisão (decisão, justificativa, alternativas, condição de revisão) para confirmação <span class="tag ia">IA</span></td><td>Quem presidiu a reunião</td></tr>
+      <tr><td><strong>Documento entra no processo</strong></td><td>Protocolo eletrônico (SEI, 1Doc, sistema próprio) ou papel</td><td>Webhook ou API do protocolo; sem isso, upload manual pela ficha <span class="tag auto">Automação</span></td><td>Vincula à ficha; a IA sugere metadados (unidade, data, vigência) como minuta <span class="tag ia">IA</span></td><td>Quem anexou</td></tr>
+      <tr><td><strong>Pergunta sem resposta</strong></td><td>No assistente; ou no corredor e no WhatsApp</td><td>Abstenção da IA no assistente; registro manual nos outros casos</td><td>Cria tarefa de documentação com a pergunta e a quem perguntar</td><td>Quem assume</td></tr>
+      <tr><td><strong>Troca de governo</strong></td><td>1º de janeiro após a eleição; lei municipal de transição, quando existe</td><td>Calendário eleitoral</td><td>Passagem de todos os processos críticos; dossiê consolidado para a comissão de transição; versão imutável</td><td>Comissão de transição</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="note"><p><strong>Município sem e-mail institucional nem protocolo eletrônico.</strong> É a realidade de boa parte dos 5.570 municípios. Nesse caso, os gatilhos viram rotina humana: a pessoa responsável registra o evento num formulário de três campos, e o sistema continua útil. A automação é ganho de escala, não pré-condição. O que não se negocia é o dono do processo e a confirmação humana.</p></div>
+
+  <h2 style="margin-top:1.4rem">2. Fluxo do serviço</h2>
+  <div class="legend"><span><span class="tag ia">IA</span> organiza e sinaliza</span><span><span class="tag auto">Automação</span> gatilho por evento</span><span><span class="tag pessoa">Pessoa</span> decide e assina</span><span><span class="tag gov">Governança</span> LGPD, acesso e registro</span><span>tracejado = ainda não implementado neste protótipo</span></div>
+  <div class="card bpwrap">
+  <div class="bp" style="grid-template-columns:150px repeat(5,minmax(165px,1fr)); min-width:980px">
+    <div></div>
+    <div class="ph">1. Troca anunciada<small>portaria publicada</small></div><div class="ph">2. Levantamento<small>o que existe e quem sabe</small></div><div class="ph">3. Montagem<small>dossiê e lacunas</small></div><div class="ph">4. Validação e passagem<small>pessoas confirmam e assinam</small></div><div class="ph">5. Acompanhamento<small>60 dias e a próxima troca</small></div>
+
+    <div class="lane u">Quem assume</div>
+    <div class="cell">Recebe o aviso e a lista do que vence em 30 dias.<span class="art">notificação</span></div>
+    <div class="cell">Abre a carteira; começa pelas fichas vermelhas. Responde ao mapa: quem mais sabe disto?<span class="art">mapa de conhecimento</span></div>
+    <div class="cell">Lê a ficha, abre as fontes, pergunta ao assistente.<span class="art">perguntas registradas</span></div>
+    <div class="cell">Valida item a item; registra dúvidas; assina a passagem.<span class="art">termo de passagem</span></div>
+    <div class="cell">Fecha tarefas conforme obtém respostas; as fichas são refeitas.<span class="art">lacunas fechadas</span></div>
+
+    <div class="lane fe">O que vê</div>
+    <div class="cell">Checklist de passagem aberto, por convênio.</div>
+    <div class="cell">Carteira com faixas por regra; mapa de conhecimento crítico; roteiro de entrevista com o antecessor.</div>
+    <div class="cell">Ficha de quatro campos com fontes; botão “gerar com IA”; assistente.</div>
+    <div class="cell">Botões de confirmar e validar; campo de dúvidas; termo com versão.</div>
+    <div class="cell">Painel de vulnerabilidades: processos sem substituto, prazos sem documento, fichas vencidas.</div>
+
+    <div class="vis"><span>linha de visibilidade</span></div>
+
+    <div class="lane i">IA</div>
+    <div class="cell off">—</div>
+    <div class="cell ia">Gera o roteiro de entrevista de passagem a partir das lacunas; resume a entrevista, com consentimento.<span class="art">roteiro e resumo</span></div>
+    <div class="cell ia">Monta a ficha; marca o que não consta; lista conflitos; propõe a quem perguntar.<span class="art">ficha com fontes</span></div>
+    <div class="cell ia">Responde com citação ou abstém-se; redige a minuta de 30 dias.<span class="art">minuta de passagem</span></div>
+    <div class="cell ia off">Refaz a ficha quando a base muda; sinaliza o que segue sem fonte.</div>
+
+    <div class="lane au">Gatilhos</div>
+    <div class="cell auto off">Portaria no diário oficial → abre a passagem.</div>
+    <div class="cell auto off">Exportação do Transferegov e planilha → alertas de prazo.</div>
+    <div class="cell auto off">E-mail do concedente, ata salva, documento protocolado → anexa à ficha.</div>
+    <div class="cell auto">Pergunta sem resposta → tarefa com responsável.<span class="art">tarefa</span></div>
+    <div class="cell auto off">Prazo a 15 dias sem documento → alerta; 1º de janeiro → passagem geral.</div>
+
+    <div class="lane bs">Quem decide</div>
+    <div class="cell pes">Secretário nomeia o responsável formal.</div>
+    <div class="cell pes">Responsável confirma o mapa: detentor e substituto por processo. Antecessor, se aceitar, dá a entrevista.</div>
+    <div class="cell pes">Antecessor ou colegas respondem às perguntas da lista de lacunas.</div>
+    <div class="cell pes">Responsável confirma as fichas; secretário assina a passagem.</div>
+    <div class="cell pes">Controladoria audita; revisão trimestral do mapa.</div>
+
+    <div class="lane gv">Governança</div>
+    <div class="cell gov">Finalidade e base legal declaradas; lista dos processos críticos.</div>
+    <div class="cell gov">Classificação dos documentos; entrevista só com consentimento e sem dados sensíveis.</div>
+    <div class="cell gov">Tratamento antes do envio à IA; registro de consultas.</div>
+    <div class="cell gov">Versão imutável da passagem; acesso por papel.</div>
+    <div class="cell gov">Retenção pela tabela de temporalidade; teste periódico de abstenção da IA.</div>
+  </div>
+  </div>
+
+  <h2 style="margin-top:1.4rem">3. Infraestrutura possível, por porte</h2>
+  <div class="cols3">
+    <div class="card"><h4>Município pequeno (até 20 mil habitantes)</h4><p style="font-size:.88rem">Sem equipe de TI própria. Planilha compartilhada e pasta na nuvem como base; ferramenta de IA pelo navegador com os documentos do processo anexados; gatilhos substituídos por rotina humana semanal e formulário de três campos. Custo próximo de zero; o que se exige é dono e rotina.</p></div>
+    <div class="card"><h4>Município médio (20 a 200 mil)</h4><p style="font-size:.88rem">Protocolo eletrônico contratado e e-mail institucional. Automação hospedada por consórcio intermunicipal ou pela empresa que já atende a prefeitura; leitura do diário oficial e exportação do Transferegov; acesso por papel via login existente. É o cenário deste protótipo.</p></div>
+    <div class="card"><h4>Grande, consórcio ou estado</h4><p style="font-size:.88rem">Integração por API ao protocolo e ao RH, login único, hospedagem própria ou contratada, contrato de IA com cláusulas de não retenção, busca semântica se o acervo justificar. O estado ou o consórcio pode oferecer o serviço aos municípios pequenos, o que resolve o problema de escala.</p></div>
+  </div>
+</section>
+
+<!-- ===================== MEMÓRIA ===================== -->
+<section class="view" id="v-memoria">
+  <h1>Memória institucional: o que não está em documento nenhum</h1>
+  <p class="muted">O dossiê recupera o que foi escrito. Esta aba cuida do que não foi: quem sabe o quê, o que o antecessor levaria embora e as decisões que ninguém registrou. É a parte do sistema em que a IA ajuda menos e as pessoas importam mais.</p>
+  <div class="two">
+    <div>
+      <div class="card">
+        <h3>Mapa de conhecimento crítico <span class="tag pessoa">Pessoa</span></h3>
+        <p class="muted">Por processo: quem detém, quem substitui, o que está documentado e o risco de perda. Preenchido pelo responsável formal; a IA só sugere linhas a partir da planilha e das atas.</p>
+        <div style="overflow:auto"><table>
+          <thead><tr><th>Processo</th><th>Detentor</th><th>Substituto</th><th>Documentação</th><th>Risco</th></tr></thead>
+          <tbody>
+            <tr><td>Prestação de contas de convênios</td><td><span class="nc">Ricardo Prado (exonerado)</span></td><td>Carla Menezes, só nas férias de 2026</td><td>Checklist de 2023, desatualizado</td><td><span class="tag r">alto</span></td></tr>
+            <tr><td>Acesso ao Transferegov e aos sistemas dos concedentes</td><td><span class="nc">Ricardo Prado (exonerado)</span></td><td><span class="nc">não consta</span></td><td>Credenciais vinculadas ao CPF do antigo gestor; transferência de perfil não registrada</td><td><span class="tag r">alto</span></td></tr>
+            <tr><td>Relação com concedentes (SEDR, MDS, FNDE)</td><td><span class="nc">Ricardo Prado (exonerado)</span></td><td><span class="nc">não consta</span></td><td>Só e-mails esparsos; sem histórico de contatos</td><td><span class="tag r">alto</span></td></tr>
+            <tr><td>Licitação das obras (convênios 07, 11, 14)</td><td>Eng. Paulo Sarmento (Obras)</td><td><span class="nc">não consta</span></td><td>Processos licitatórios no protocolo</td><td><span class="tag a">médio</span></td></tr>
+            <tr><td>Publicação no portal da transparência</td><td><span class="nc">não consta</span></td><td><span class="nc">não consta</span></td><td>Exigência nova (IN 04/2025) não incorporada</td><td><span class="tag a">médio</span></td></tr>
+            <tr><td>Convênios de educação e saúde (02, 06, 10, 13)</td><td>Carla Menezes</td><td>Jonas Teixeira</td><td>Planilha e protocolo</td><td><span class="tag g">baixo</span></td></tr>
+          </tbody>
+        </table></div>
+        <p class="muted" style="margin-top:.5rem">A segunda linha é a mais comum nas prefeituras e a menos documentada: o acesso ao sistema federal está no CPF de uma pessoa, não da instituição.</p>
+      </div>
+      <div class="card" style="margin-top:1rem">
+        <h3>Registrar uma decisão <span class="tag pessoa">Pessoa</span></h3>
+        <p class="muted">O que uma ata costuma não ter: por que, o que mais foi considerado e quando rever. Quatro campos. Decisões antigas sem registro também podem ser inseridas aqui, de memória, marcadas como tal.</p>
+        <form id="decForm" style="display:grid; gap:.5rem">
+          <input type="text" id="decQ" placeholder="Decisão (ex.: pedir aditivo de 180 dias no convênio 07)" aria-label="Decisão" required>
+          <input type="text" id="decWhy" placeholder="Justificativa" aria-label="Justificativa" required>
+          <input type="text" id="decAlt" placeholder="Alternativas consideradas e por que foram descartadas" aria-label="Alternativas">
+          <input type="text" id="decRev" placeholder="Condição de revisão (ex.: se o MDS negar o aditivo)" aria-label="Condição de revisão">
+          <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap"><button class="btn sec" type="submit">Registrar decisão</button><label class="muted"><input type="checkbox" id="decMem"> registro de memória, sem ata</label></div>
+        </form>
+        <ul class="log" id="decList"></ul>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h3>Entrevista de passagem <span class="tag ia">IA</span> <span class="tag gov">Governança</span></h3>
+        <p class="muted">A IA transforma a lista de lacunas num roteiro de entrevista com quem saiu ou com quem mais sabe. A entrevista é voluntária: pessoa exonerada não tem obrigação de participar. O resumo só é gerado com consentimento e não contém dados pessoais de terceiros.</p>
+        <label class="muted" style="display:block; margin:.4rem 0"><input type="checkbox" id="consent"> A pessoa entrevistada consentiu em participar e em ter o resumo registrado no dossiê.</label>
+        <button class="btn" id="btnRoteiro" disabled>Gerar roteiro de entrevista</button>
+        <div id="roteiro" class="msg a" style="display:none; margin-top:.8rem"></div>
+        <p class="muted" style="margin-top:.6rem">Fonte do roteiro: as lacunas abertas das fichas e o mapa acima. A IA não inventa perguntas sobre o que os documentos não indicam; ela ordena e formula.</p>
+      </div>
+      <div class="card" style="margin-top:1rem">
+        <h3>Vulnerabilidades <span class="tag gov">Governança</span></h3>
+        <ul class="log" id="vuln"></ul>
+        <p class="muted">Calculadas por regra a partir da carteira, do mapa e das fichas. É o painel que a controladoria e o secretário veem, sem acesso ao conteúdo das fichas.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== TRAJETÓRIA ===================== -->
+<section class="view" id="v-trajetoria">
+  <h1>Trajetória: do texto ao sistema institucional</h1>
+  <p class="muted">Três níveis de fidelidade, cada um respondendo a uma pergunta diferente. Avançar de um para o outro depende de evidência, não de entusiasmo.</p>
+  <div class="traj">
+    <div class="card">
+      <span class="lvl">Nível 1</span><h3>Baixa fidelidade: documentos, comandos, saídas</h3>
+      <p class="muted">É o que a Parte 2 do estudo de caso pede. Custa horas, não dias.</p>
+      <ul><li>Seis documentos fictícios com cinco armadilhas plantadas.</li><li>Cinco comandos numa ferramenta de IA generalista.</li><li>Saídas em texto: fichas, lacunas, três abstenções, minuta.</li><li>Avaliação do que funcionou e do que não dá para afirmar.</li></ul>
+      <p class="q"><strong>Responde:</strong> a IA monta o dossiê corretamente e se abstém quando não há fonte? <a href="#bastidores">Ver bastidores do teste</a>.</p>
+    </div>
+    <div class="card cur">
+      <span class="lvl">Nível 2 · você está aqui</span><h3>Protótipo funcional: interface, fluxo e IA ao vivo</h3>
+      <p class="muted">Esta página. Custa dias. Sem banco de dados, sem integração.</p>
+      <ul><li>Carteira, ficha, assistente, passagem e blueprint navegáveis.</li><li>IA respondendo em tempo real a partir dos documentos tratados.</li><li>Tratamento de dados antes do envio e registro de consultas.</li><li>Lacunas viram tarefas; passagem validada por quem assume.</li></ul>
+      <p class="q"><strong>Responde:</strong> uma pessoa sem contexto consegue usar isso para continuar o trabalho? É o teste pendente: duas pessoas, três tarefas, com e sem o dossiê.</p>
+    </div>
+    <div class="card">
+      <span class="lvl">Nível 3</span><h3>Adoção institucional: norma, integração, segurança</h3>
+      <p class="muted">Só depois que o nível 2 mostrar efeito em pessoas. Custa meses e depende de atos da prefeitura.</p>
+      <ul><li>Norma que torna o dossiê obrigatório na passagem.</li><li>Integração ao protocolo, ao e-mail e ao login institucional.</li><li>Contrato de IA, hospedagem, avaliação de impacto e logs.</li><li>Indicadores acompanhados por mais de uma gestão.</li></ul>
+      <p class="q"><strong>Responde:</strong> o sistema sobrevive à próxima troca de gestão?</p>
+    </div>
+  </div>
+
+  <h2 style="margin-top:1.6rem">Onde o sistema mora na arquitetura do município</h2>
+  <p class="muted">Institucionalizar é dar dono, regra e lugar. Sem os três, o painel vira mais um sistema que ninguém atualiza.</p>
+  <div class="arch">
+    <div class="card"><h4>Secretaria de Administração</h4><p>Dona do processo de passagem. Nomeia o responsável formal pelo conhecimento de cada processo crítico e responde pelo mapa de conhecimento.</p><span class="papel">papel: dona do serviço</span></div>
+    <div class="card"><h4>Gabinete e Procuradoria</h4><p>Editam o decreto que institui o dossiê de continuidade como etapa obrigatória de exoneração, nomeação e troca de governo, com prazo e conteúdo mínimo.</p><span class="papel">papel: norma</span></div>
+    <div class="card"><h4>Controladoria interna</h4><p>Audita a existência de dossiê nos processos críticos e recebe os alertas de prazo sem documento. É quem cobra quando o laço não fecha.</p><span class="papel">papel: controle</span></div>
+    <div class="card"><h4>Tecnologia da informação</h4><p>Integra ao protocolo eletrônico e ao login institucional, mantém os gatilhos do n8n, os backups e a segregação de ambientes.</p><span class="papel">papel: operação</span></div>
+    <div class="card"><h4>Encarregado de dados (LGPD)</h4><p>Aprova a avaliação de impacto, a classificação dos documentos, as regras de tratamento antes do envio à IA e o contrato com o fornecedor.</p><span class="papel">papel: proteção de dados</span></div>
+    <div class="card"><h4>Arquivo municipal</h4><p>Define retenção e eliminação segundo a tabela de temporalidade; o dossiê não cria uma segunda política de guarda.</p><span class="papel">papel: memória de longo prazo</span></div>
+  </div>
+
+  <h2 style="margin-top:1.6rem">Desenvolvimento posterior, segurança e acompanhamento</h2>
+  <div class="road">
+    <div class="card"><h4>Onda 1 · piloto (3 meses)</h4><ul><li>Uma secretaria, um processo crítico, documentos reais sem dados de terceiros.</li><li>Responsável formal nomeado; mapa de conhecimento de 5 a 10 processos.</li><li>Teste de continuidade com pessoas, antes e depois.</li><li>Decisão de seguir baseada no teste, não na satisfação.</li></ul></div>
+    <div class="card"><h4>Onda 2 · integração (6 meses)</h4><ul><li>Gatilhos do n8n ligados ao protocolo e ao e-mail.</li><li>Login institucional e acesso por papel.</li><li>Decreto da passagem obrigatória; checklist incorporado ao ato de exoneração.</li><li>Base de busca semântica só se o acervo passar de alguns milhares de documentos.</li></ul></div>
+    <div class="card"><h4>Onda 3 · consolidação (12 meses)</h4><ul><li>Expansão a outras secretarias pelo mapa de conhecimento crítico.</li><li>Indicador trimestral: tarefas resolvidas sem o antecessor; prazos perdidos por falta de informação.</li><li>Teste periódico de abstenção da IA com perguntas sem resposta na base.</li><li>Revisão do contrato e da avaliação de impacto.</li></ul></div>
+  </div>
+  <div class="cols2">
+    <div class="card"><h4>Segurança</h4><ul style="font-size:.88rem; padding-left:1.1rem"><li>Acesso por papel herdado do login institucional; a IA não tem credencial própria.</li><li>Logs de consulta e de geração guardados fora da aplicação, com retenção definida.</li><li>Contrato com o fornecedor de IA: sem retenção de prompts, sem uso para treinamento, processamento em região definida.</li><li>Versão imutável de cada passagem; histórico de alterações nas fichas.</li><li>Ambiente de testes com dados fictícios separado do de produção.</li></ul></div>
+    <div class="card"><h4>Base vetorial: quando vale a pena</h4><p style="font-size:.9rem">Não agora. Com dezenas de documentos por processo, basta anexar os documentos do processo e filtrar por metadados; é mais barato, mais auditável e mais fácil de explicar a um auditor. Busca semântica faz sentido quando o acervo passa de alguns milhares de documentos e as perguntas atravessam processos, e mesmo assim combinada com filtros por unidade, data e classificação. O erro comum é começar pela base vetorial e descobrir que o problema era a falta de metadados e de dono.</p></div>
+  </div>
+</section>
+
+<!-- ===================== LGPD ===================== -->
+<section class="view" id="v-dados">
+  <h1>LGPD: o que a IA vê, o que nunca vê, e por quê</h1>
+  <p class="muted">A regra parte de uma distinção que a Lei de Acesso à Informação já faz: o nome e o cargo de um agente público no exercício da função são informação pública. O que precisa de proteção são os dados de terceiros e os dados pessoais que não têm relação com a função.</p>
+  <div class="rule">
+    <div class="card"><h4>Permanece no texto enviado à IA</h4><ul><li>Nome e cargo de agentes públicos em atos oficiais: portaria, memorando, ata, planilha de responsáveis.</li><li>Nomes de órgãos, números de convênio, valores, prazos, decisões.</li><li>Fatos funcionais não sensíveis, como a designação de substituto durante férias.</li></ul><p class="muted">Base: LAI, arts. 7º e 8º; LGPD, arts. 7º, III, e 23. Pseudonimizar o nome do coordenador de uma portaria publicada não protege ninguém e dificulta a passagem.</p></div>
+    <div class="card no"><h4>Removido ou substituído antes do envio</h4><ul><li>Pessoas físicas que não são agentes públicos: fornecedores individuais, beneficiários, representantes de empresas.</li><li>Contatos pessoais: telefones, e-mails não institucionais, endereços.</li><li>CPF, dados bancários, dados de saúde e quaisquer dados sensíveis, inclusive de servidores (licença médica, por exemplo).</li></ul><p class="muted">Neste caso, a ata cita um fornecedor pessoa física e seu telefone; ambos são substituídos por marcadores. Veja na aba Assistente o texto como a IA o recebe.</p></div>
+  </div>
+  <div class="lg">
+    <div class="card"><h3>Finalidade e base legal</h3><p>Finalidade única: continuidade administrativa e passagem de gestão. Base legal: tratamento necessário à execução de políticas públicas. Nenhum outro uso, inclusive para avaliar desempenho de servidores.</p></div>
+    <div class="card"><h3>Minimização</h3><p>Só entram os documentos do mapa de conhecimento crítico. Extratos, notas fiscais e cadastros de beneficiários ficam fora da base lida pela IA; a ficha aponta onde estão, não os reproduz.</p></div>
+    <div class="card"><h3>Acesso por papel</h3><p>Quem assume e o responsável formal veem a ficha completa; quem consulta o painel de vulnerabilidades vê indicadores. A IA não tem acesso próprio: cada consulta herda a permissão de quem perguntou.</p></div>
+    <div class="card"><h3>Registro e rastreabilidade</h3><p>Toda consulta, geração e confirmação grava autor, data, documentos lidos e versão. Serve à prestação de contas e ao direito do titular de saber como seus dados foram tratados.</p></div>
+    <div class="card"><h3>Retenção e exclusão</h3><p>Documentos seguem a tabela de temporalidade do arquivo. O registro de decisões tem histórico de alterações e exclusão com regra, porque estudos de governos locais documentam o esquecimento deliberado para apagar falhas.</p></div>
+    <div class="card"><h3>Avaliação de impacto</h3><p>Antes de qualquer documento real: relatório de impacto com o encarregado de dados, listando categorias de dados, fluxo até o fornecedor de IA, local de processamento e cláusulas de não retenção e não treinamento.</p></div>
+    <div class="card"><h3>Classificação dos documentos deste caso</h3>
+      <p><span class="cls pub">público</span> Portaria 212/2026</p>
+      <p><span class="cls int">interno</span> Checklist, planilha de controle, memorando, e-mail do concedente</p>
+      <p><span class="cls pes">dados de terceiros</span> Ata (fornecedor pessoa física e telefone)</p>
+      <p class="muted">Todos fictícios. A ata é o documento que recebe tratamento antes do envio.</p></div>
+  </div>
+</section>
+
+<!-- ===================== BASTIDORES ===================== -->
+<section class="view" id="v-bastidores">
+  <h1>Bastidores do teste</h1>
+  <p class="muted">O que foi feito no nível de baixa fidelidade, para quem quiser conferir: os documentos, os comandos, o que a IA produziu e o que esse resultado não demonstra.</p>
+  <div class="subnav" role="tablist">
+    <button data-sub="docs" aria-pressed="true">Documentos</button><button data-sub="cmd" aria-pressed="false">Comandos</button><button data-sub="res" aria-pressed="false">Resultados observados</button><button data-sub="aval" aria-pressed="false">Avaliação</button><button data-sub="prox" aria-pressed="false">Próximos passos</button>
+  </div>
+  <div class="sub on" id="sub-docs">
+    <p>Seis documentos, cerca de quatro páginas. Cinco armadilhas plantadas: dois prazos em branco, uma vigência vencida, um conflito de datas e uma decisão sem desfecho registrado. Uma sexta, o checklist desatualizado, só é detectável porque o e-mail cita a instrução normativa nova.</p>
+    <ul class="doclist" id="doclistAll"></ul>
+    <p class="muted">Clique para ler cada documento e ver sua classificação. Os textos são os mesmos que a IA recebe, antes do tratamento de dados.</p>
+  </div>
+  <div class="sub" id="sub-cmd">
+    <h3>1. Instrução de papel</h3><pre class="cmd" id="cmd1"></pre>
+    <h3>2. Dossiê</h3><pre class="cmd">Para cada um dos 14 convênios da planilha, monte uma ficha com quatro campos: Onde estamos; Por que chegamos aqui; O que vence nos próximos 60 dias (até 09/01/2027); Quem sabe resolver. Ao final, liste os conflitos entre documentos.</pre>
+    <h3>3. Lacunas</h3><pre class="cmd">Compare cada ficha com a planilha e com o checklist. Liste os campos obrigatórios ausentes e as decisões sem desfecho registrado. Para cada lacuna, proponha uma pergunta objetiva e indique a quem perguntar, se algum documento permitir.</pre>
+    <h3>4. Teste negativo</h3><pre class="cmd">Responda: a) número do processo do pedido de aditivo do convênio 07; b) valor já executado do convênio 03; c) quem é o coordenador de convênios hoje. Se a resposta não estiver nos documentos, diga isso e indique a quem perguntar.</pre>
+    <h3>5. Resumo de passagem</h3><pre class="cmd">Escreva, em até 15 linhas, o que a pessoa que assume precisa fazer nos próximos 30 dias, em ordem de prazo, com a fonte de cada item. Trate o texto como minuta a ser revisada.</pre>
+  </div>
+  <div class="sub" id="sub-res">
+    <div class="grade">
+      <div><b>Recuperação</b> 10 perguntas com resposta conhecida nos documentos: <span class="ok">10 de 10</span> corretas e com fonte.</div>
+      <div><b>Lacunas e conflitos</b> 5 armadilhas plantadas e 2 conflitos derivados (sucessão; checklist): <span class="ok">todos apontados</span>.</div>
+      <div><b>Confiança</b> 3 perguntas sem resposta na base: <span class="ok">3 abstenções</span>, cada uma com a fonte do que se sabe e a quem perguntar.</div>
+      <div><b>Compreensão</b> A justificativa do aditivo foi reproduzida fiel à ata, sem afirmar que o aditivo foi concedido: <span class="ok">atendido</span>.</div>
+      <div><b>Continuidade</b> Duas pessoas sem contexto executam três tarefas, com e sem o dossiê: <span class="pend">não realizado</span>. É a evidência decisiva.</div>
+    </div>
+    <p>As fichas, as lacunas, as abstenções e a minuta que aparecem nas abas Ficha, Assistente e Passagem são essas saídas, reproduzidas como foram geradas. O assistente ao vivo pode responder de forma diferente; a comparação entre a resposta fixa e a resposta ao vivo faz parte do teste.</p>
+  </div>
+  <div class="sub" id="sub-aval">
+    <h3>O que funcionou</h3>
+    <p>Montagem das fichas, detecção dos campos vazios, identificação do conflito de datas e leitura correta de que o memorando de férias não resolve a sucessão. A instrução de registrar divergências em vez de escolher produziu o comportamento desejado no convênio 03. A minuta ordenou os itens pelo prazo mais restritivo.</p>
+    <h3>O que este teste não demonstra</h3>
+    <ul>
+      <li><strong>Quem desenhou as armadilhas foi quem executou o teste.</strong> Os documentos foram escritos sabendo o que a IA deveria encontrar. O teste honesto é com documentos escritos por outra pessoa, com armadilhas que o executor não conhece.</li>
+      <li><strong>A IA só detectou o checklist desatualizado porque o e-mail deu a pista.</strong> Conhecimento que não está em nenhum documento continua inacessível; a IA não substitui entrevista nem rotina de registro.</li>
+      <li><strong>Uma rodada, seis documentos.</strong> Um acervo real tem centenas de documentos, versões conflitantes e digitalizações ruins; a taxa de erro e a de abstenção mudam com a escala.</li>
+      <li><strong>Sem a instrução “não infira”, o risco é diferente.</strong> A hipótese de que a IA afirmaria o protocolo do aditivo com instrução mais frouxa não foi testada.</li>
+      <li><strong>Resultado técnico não é continuidade.</strong> Acertar e abster-se mostra que o dossiê é confiável; não mostra que ajuda alguém a trabalhar.</li>
+    </ul>
+    <h3>Evidência que decidiria avançar</h3>
+    <p>Se duas pessoas que não conhecem o caso fizerem três tarefas (identificar o prazo mais urgente, listar os documentos da prestação de contas do convênio 03, dizer a quem perguntar sobre o aditivo) com menos tempo e menos erros usando o dossiê do que usando os documentos brutos, há sinal para um piloto. Se não, o esforço deve ir para a rotina de registro, não para a ferramenta.</p>
+  </div>
+  <div class="sub" id="sub-prox">
+    <ol>
+      <li><strong>Teste de continuidade com pessoas</strong>, nas condições descritas acima. Antes de qualquer linha de código a mais.</li>
+      <li><strong>Documentos de terceiros.</strong> Pedir a outra pessoa que escreva um conjunto novo, com armadilhas desconhecidas, e repetir os cinco comandos.</li>
+      <li><strong>Teste de abstenção em escala.</strong> Vinte perguntas sem resposta na base, misturadas a vinte com resposta; medir falsas afirmações.</li>
+      <li><strong>Piloto em uma secretaria</strong>, com responsável formal nomeado, documentos sem dados de terceiros e avaliação de impacto aprovada.</li>
+      <li><strong>Integração mínima</strong>: um gatilho (portaria de exoneração abre a passagem) antes de qualquer outro.</li>
+      <li><strong>Base vetorial</strong> só quando o acervo e as perguntas cruzadas justificarem; ver a aba Trajetória.</li>
+    </ol>
+  </div>
+  <footer>Protótipo para o estudo de caso do processo seletivo de Facilitador(a) do Programa Governos na Era da IA. Dados fictícios. Respostas do assistente geradas em tempo real pelo Claude a partir dos seis documentos tratados; faixas da carteira calculadas por regra, sem IA. Desenho, documentos fictícios, critérios de avaliação e leitura crítica: pessoa candidata.</footer>
+</section>
+</main>
+
+<!-- painel lateral de documentos -->
+<div class="drawer" id="drawer" aria-hidden="true">
+  <div class="back" id="drawerBack"></div>
+  <aside class="panel" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+    <button class="close" id="dClose" aria-label="Fechar">Fechar</button>
+    <h2 id="dTitle"></h2>
+    <p class="muted" id="dMeta"></p>
+    <div class="doctext" id="dText"></div>
+    <details class="mask" style="margin-top:1rem"><summary>Como a IA recebe este documento</summary><pre id="dMask"></pre></details>
+  </aside>
+</div>
+<dialog id="dlg"><h3>Onde o documento foi registrado?</h3><p class="muted">Número de protocolo, pasta ou sistema. Isso alimenta a base e refaz a ficha.</p><input type="text" id="dlgIn" style="width:100%" placeholder="ex.: protocolo 2026/4411"><div class="acts"><button class="btn sec" id="dlgCancel" type="button">Cancelar</button><button class="btn ok" id="dlgOk" type="button">Marcar como resolvida</button></div></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  // ---------- Dados fictícios ----------
+  var conv = [
+    {id:'01',obj:'Reforma da UBS Centro',conc:'Estado (SES)',val:'850.000',vig:'2027-06-30',pc:'2027-08-29',resp:'Ricardo'},
+    {id:'02',obj:'Aquisição de ambulância',conc:'União (MS)',val:'320.000',vig:'2027-03-31',pc:'2027-05-30',resp:'Carla'},
+    {id:'03',obj:'Pavimentação do Bairro Alto',conc:'Estado (SEDR)',val:'1.200.000',vig:'2026-10-15',pc:'2026-12-15',resp:'Ricardo'},
+    {id:'04',obj:'Creche do Jardim Novo',conc:'União (FNDE)',val:'2.100.000',vig:'2027-12-31',pc:'2028-03-01',resp:'Ricardo'},
+    {id:'05',obj:'Equipamentos escolares',conc:'Estado (SEDUC)',val:'180.000',vig:'2026-11-30',pc:'',resp:'Jonas'},
+    {id:'06',obj:'Capacitação de agentes de saúde',conc:'Estado (SES)',val:'95.000',vig:'2026-12-31',pc:'2027-03-01',resp:'Carla'},
+    {id:'07',obj:'Centro de referência da assistência social',conc:'União (MDS)',val:'640.000',vig:'2026-12-31',pc:'2027-03-01',resp:'Ricardo'},
+    {id:'08',obj:'Iluminação pública em LED',conc:'Estado (SDE)',val:'760.000',vig:'2027-05-31',pc:'2027-07-30',resp:'Ricardo'},
+    {id:'09',obj:'Feira do produtor rural',conc:'Estado (SAA)',val:'60.000',vig:'2026-09-30',pc:'2026-11-29',resp:'Jonas'},
+    {id:'10',obj:'Veículo de transporte escolar',conc:'União (FNDE)',val:'290.000',vig:'2027-02-28',pc:'2027-04-29',resp:'Carla'},
+    {id:'11',obj:'Ponte do Córrego Fundo',conc:'Estado (SDE)',val:'1.450.000',vig:'2027-04-30',pc:'',resp:'Ricardo'},
+    {id:'12',obj:'Academia ao ar livre',conc:'Estado (SELJ)',val:'70.000',vig:'2027-01-31',pc:'2027-04-01',resp:'Jonas'},
+    {id:'13',obj:'Informatização das unidades de saúde',conc:'União (MS)',val:'410.000',vig:'2027-09-30',pc:'2027-11-29',resp:'Carla'},
+    {id:'14',obj:'Reforma do mercado municipal',conc:'Estado (SDE)',val:'980.000',vig:'2027-08-31',pc:'2027-10-30',resp:'Ricardo'}
+  ];
+  var NOME={Ricardo:'Ricardo Prado',Carla:'Carla Menezes',Jonas:'Jonas Teixeira'};
+  var HOJE = new Date('2026-11-10T12:00:00');
+  function br(iso){ if(!iso) return ''; var p=iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+  function dias(iso){ return Math.round((new Date(iso+'T12:00:00')-HOJE)/864e5); }
+  var DOCS = {
+    planilha:{nome:'Planilha de controle de convênios',meta:'convenios_2026_v7.xlsx · Coordenação de Convênios · última alteração 28/10/2026',cls:'interno',texto:function(){return 'Nº | Objeto | Concedente | Valor R$ | Fim da vigência | Prazo prestação de contas | Responsável\n'+conv.map(function(c){return c.id+' | '+c.obj+' | '+c.conc+' | '+c.val+' | '+br(c.vig)+' | '+(c.pc?br(c.pc):'(em branco)')+' | '+c.resp;}).join('\n');}},
+    ata:{nome:'Ata nº 03/2026 da coordenação de convênios',meta:'12/03/2026 · presentes: Ricardo Prado (coordenador), Carla Menezes (analista), Jonas Teixeira (assistente), Eng. Paulo Sarmento (Obras)',cls:'terceiros',texto:function(){return 'Pauta única: Convênio nº 07/2024 (MDS), construção do Centro de Referência da Assistência Social.\n\nO Eng. Paulo Sarmento informou que a licitação da obra foi declarada deserta em fevereiro e que a nova publicação só deve ocorrer em abril, o que torna inviável a conclusão dentro da vigência atual, 31/12/2026. Jonas Teixeira relatou contato com o único interessado que desistiu, o fornecedor Marcos Vilela (MEI), pelo telefone (11) 98765-4321, que alegou prazo de obra incompatível.\n\nAlternativas discutidas: (a) solicitar ao MDS aditivo de prazo de 180 dias; (b) devolver o saldo e encerrar o convênio. A devolução comprometeria o Plano Municipal de Assistência Social.\n\nDecisão: solicitar ao MDS aditivo de prazo de 180 dias, com justificativa fundamentada no atraso licitatório.\n\nEncaminhamento: Ricardo Prado elabora o ofício e a justificativa técnica até 31/03/2026; Jonas Teixeira reúne a documentação da licitação deserta.';}},
+    email:{nome:'E-mail da Gerência de Convênios da SEDR',meta:'De: convenios@sedr.sp (fictício) · Para: Ricardo Prado · 05/11/2026 · Assunto: Convênio 03/2023 — encerramento de vigência e prestação de contas final',cls:'interno',texto:function(){return 'Prezado Coordenador,\n\nComunicamos que a vigência do Convênio nº 03/2023 (Pavimentação do Bairro Alto) encerrou-se em 15/10/2026. Nos termos da cláusula décima, a prestação de contas final deverá ser apresentada no prazo de 30 (trinta) dias contados do recebimento desta notificação.\n\nLembramos que, desde a Instrução Normativa SEDR nº 04/2025, o relatório de cumprimento do objeto deve vir acompanhado do comprovante de publicação dos dados do convênio no portal da transparência do município. Prestações de contas sem esse comprovante serão devolvidas para complementação.\n\nGerência de Convênios · SEDR';}},
+    memorando:{nome:'Memorando nº 118/2026 da Secretaria de Administração',meta:'05/08/2026 · ao Setor de Pessoal',cls:'interno',texto:function(){return 'Designo a servidora Carla Menezes, analista administrativa, para responder pela Coordenação de Convênios no período de 10 a 24 de agosto de 2026, durante as férias regulamentares do coordenador Ricardo Prado, sem prejuízo de suas atribuições.\n\nSecretário Municipal de Administração';}},
+    portaria:{nome:'Portaria nº 212/2026 do Gabinete do Prefeito',meta:'03/11/2026 · publicada no diário oficial do município',cls:'público',texto:function(){return 'Art. 1º Exonerar, a pedido, Ricardo Prado do cargo em comissão de Coordenador de Convênios, símbolo CC-3, da Secretaria Municipal de Administração, com efeitos a partir de 05/11/2026.\n\nArt. 2º Esta Portaria entra em vigor na data de sua publicação.';}},
+    checklist:{nome:'Checklist interno de prestação de contas',meta:'versão de março de 2023 · uso interno da coordenação',cls:'interno',texto:function(){return '1. Relatório de cumprimento do objeto, assinado pelo gestor.\n2. Relatório financeiro com demonstrativo de receitas e despesas.\n3. Extratos bancários da conta específica, do início ao fim da vigência.\n4. Notas fiscais e comprovantes de pagamento.\n5. Relatório fotográfico (obras e equipamentos).\n6. Termo de aceite ou recebimento definitivo.\n7. Comprovante de devolução de saldo, se houver.';}}
+  };
+  var DOCNAME = {planilha:'Planilha',ata:'Ata',email:'E-mail',memorando:'Memorando',portaria:'Portaria',checklist:'Checklist'};
+  var CLS={'público':'pub','interno':'int','terceiros':'pes'}; var CLSTXT={'público':'público','interno':'interno','terceiros':'dados de terceiros'};
+  // Tratamento LGPD: agentes públicos permanecem; terceiros PF e contatos pessoais saem
+  function tratar(t){ return t.split('Marcos Vilela (MEI)').join('[fornecedor pessoa física]').split('Marcos Vilela').join('[fornecedor pessoa física]').replace(/\(\d{2}\)\s?\d{4,5}-\d{4}/g,'[telefone pessoal removido]'); }
+  function docsTexto(masc){ return Object.keys(DOCS).map(function(k){ var t='=== ['+DOCNAME[k]+'] '+DOCS[k].nome+' · '+DOCS[k].meta+' ===\n'+DOCS[k].texto(); return masc?tratar(t):t; }).join('\n\n'); }
+  var SYS = 'Você apoia a passagem de gestão da Coordenação de Convênios da Prefeitura de Jatobá (SP). A data de hoje é 10/11/2026.\nUse apenas os seis documentos fornecidos. Para cada afirmação, indique o documento de origem entre colchetes: [Planilha], [Ata], [E-mail], [Memorando], [Portaria], [Checklist].\nQuando a informação não constar em nenhum documento, escreva "Não consta nos documentos." e indique a quem perguntar, se algum documento permitir. Não infira, não complete com o que seria provável.\nQuando dois documentos divergirem, registre a divergência; não escolha um deles.\nMarcadores como [fornecedor pessoa física] ou [telefone pessoal removido] indicam dados retirados por proteção de dados; não tente reconstruí-los.\nResponda em português, de forma direta, em no máximo 12 linhas.';
+
+  // ---------- Regras de alerta (sem IA) ----------
+  function alertas(c){ var a=[]; if(!c.pc) a.push('prazo de prestação de contas em branco'); if(dias(c.vig)<0&&c.id!=='03') a.push('vigência vencida'); if(c.id==='03') a.push('prazo diverge: 15/12 (planilha) e 05/12 (e-mail)'); if(c.pc&&dias(c.pc)>=0&&dias(c.pc)<=30) a.push('prestação de contas em '+dias(c.pc)+' dias'); if(c.id==='07') a.push('decisão de aditivo sem desfecho registrado'); if(c.resp==='Ricardo') a.push('responsável exonerado, sem substituto'); return a; }
+  function faixa(c){ var n=alertas(c).length; if(n>=2||dias(c.vig)<0) return 'r'; if(n===1) return 'a'; return 'g'; }
+  var FX={r:'Vermelho',a:'Amarelo',g:'Verde'};
+
+  // ---------- Lacunas (saída do comando 3) ----------
+  var LAC = {
+    '03':[{t:'Confirmar com a SEDR o prazo válido: 05/12 (e-mail) ou 15/12 (planilha)',who:'Gerência de Convênios da SEDR'},{t:'Publicar os dados do convênio no portal da transparência e anexar o comprovante (IN 04/2025)',who:'Setor de transparência'}],
+    '05':[{t:'Obter o prazo de prestação de contas após 30/11/2026',who:'Jonas Teixeira ou SEDUC'}],
+    '07':[{t:'Verificar se o ofício de aditivo (ata de 12/03) foi protocolado no MDS e se houve resposta',who:'Jonas Teixeira; Eng. Paulo Sarmento; setor de protocolo'}],
+    '09':[{t:'Confirmar se a feira ocorreu, se há saldo e se a prestação de contas de 29/11 está pronta',who:'Jonas Teixeira'}],
+    '11':[{t:'Obter o prazo de prestação de contas após 30/04/2027',who:'Não consta responsável atual; perguntar ao secretário'}],
+    'todos':[{t:'Formalizar quem responde pela coordenação desde 05/11/2026',who:'Secretário de Administração'},{t:'Atualizar o checklist de 2023 com a exigência da IN 04/2025 e verificar outros concedentes',who:'Carla Menezes'}]
+  };
+  var store={}; try{ store=JSON.parse(localStorage.getItem('painel-cont-v2')||'{}'); }catch(e){ store={}; }
+  function save(){ try{ localStorage.setItem('painel-cont-v2',JSON.stringify(store)); }catch(e){} }
+  store.done=store.done||{}; store.extra=store.extra||{}; store.ho=store.ho||{}; store.doubts=store.doubts||[]; store.audit=store.audit||[]; store.confirm=store.confirm||{};
+
+  // ---------- Fichas (saída do comando 2) ----------
+  function S(k){ return '<button class="src" data-doc="'+k+'">'+DOCNAME[k]+'</button>'; }
+  var NC='<span class="nc">Não consta nos documentos.</span>';
+  function semResp(){ return 'Responsável na planilha: Ricardo Prado '+S('planilha')+', exonerado a partir de 05/11/2026 '+S('portaria')+'. Substituto: '+NC+' Carla Menezes respondeu pela coordenação apenas nas férias de agosto '+S('memorando')+'.'; }
+  var FICHA = {
+    '03':{onde:'Vigência encerrada em 15/10/2026 '+S('planilha')+'. O concedente notificou o encerramento e cobrou a prestação de contas final em 05/11/2026 '+S('email')+'. Situação física e valores executados: '+NC, porque:NC, vence:'Prestação de contas final. <strong>Divergência:</strong> 15/12/2026 '+S('planilha')+' e 30 dias a partir de 05/11, isto é, 05/12/2026 '+S('email')+'. Exigência adicional: comprovante do portal da transparência (IN 04/2025) '+S('email')+', ausente do checklist '+S('checklist')+'.', quem:semResp()+' A SEDR pode confirmar o prazo '+S('email')+'.'},
+    '07':{onde:'Vigência até 31/12/2026 '+S('planilha')+'. Em março a licitação estava deserta e a nova publicação prevista para abril '+S('ata')+'. Situação atual da obra e do aditivo: '+NC, porque:'Em 12/03/2026 decidiu-se solicitar aditivo de 180 dias por atraso licitatório; devolver o saldo foi descartado por comprometer o Plano Municipal de Assistência Social; Ricardo Prado elaboraria o ofício até 31/03 '+S('ata')+'. <strong>Se foi protocolado e respondido: '+NC+'</strong>', vence:'Fim da vigência em 31/12/2026, se o aditivo não foi concedido '+S('planilha')+'.', quem:semResp()+' Jonas Teixeira reuniu a documentação; Eng. Paulo Sarmento participou '+S('ata')+'.'},
+    '09':{onde:'Vigência encerrada em 30/09/2026 '+S('planilha')+'. Realização, saldo e prestação de contas: '+NC, porque:NC, vence:'Prestação de contas em 29/11/2026 '+S('planilha')+'.', quem:'Jonas Teixeira '+S('planilha')+'.'},
+    '05':{onde:'Vigência termina em 30/11/2026 '+S('planilha')+'. Situação da aquisição: '+NC, porque:NC, vence:'Fim da vigência em 30/11. Prazo de prestação de contas <span class="nc">em branco</span> '+S('planilha')+'.', quem:'Jonas Teixeira '+S('planilha')+'.'},
+    '06':{onde:'Vigência até 31/12/2026 '+S('planilha')+'. Andamento: '+NC, porque:NC, vence:'Fim da vigência em 31/12/2026 '+S('planilha')+'.', quem:'Carla Menezes '+S('planilha')+'.'}
+  };
+  function fichaDe(c){ if(FICHA[c.id]) return FICHA[c.id]; var q=c.resp==='Ricardo'?semResp():NOME[c.resp]+' '+S('planilha')+'.'; return {onde:'Vigência até '+br(c.vig)+' '+S('planilha')+'. Andamento: '+NC, porque:NC, vence:(c.pc?'Nada em 60 dias. Prestação de contas em '+br(c.pc):'Prazo de prestação de contas <span class="nc">em branco</span>')+' '+S('planilha')+'.', quem:q}; }
+
+  // ---------- Utilidades de interface ----------
+  var toastEl=document.getElementById('toast'), toastT;
+  function toast(m){ toastEl.textContent=m; toastEl.classList.add('on'); clearTimeout(toastT); toastT=setTimeout(function(){toastEl.classList.remove('on');},2600); }
+  function esc(s){ return String(s).replace(/</g,'&lt;'); }
+  function linkSrc(t){ return esc(t).replace(/\[(Planilha|Ata|E-mail|Memorando|Portaria|Checklist)\]/g,function(m,d){ var k=Object.keys(DOCNAME).filter(function(x){return DOCNAME[x]===d;})[0]; return '<button class="src" data-doc="'+k+'">'+d+'</button>'; }); }
+  // drawer
+  var drawer=document.getElementById('drawer');
+  function openDoc(k){ var d=DOCS[k]; document.getElementById('dTitle').textContent='['+DOCNAME[k]+'] '+d.nome; document.getElementById('dMeta').innerHTML='<span class="cls '+CLS[d.cls]+'">'+CLSTXT[d.cls]+'</span> '+esc(d.meta); document.getElementById('dText').textContent=d.texto(); document.getElementById('dMask').textContent=tratar(d.texto()); drawer.classList.add('on'); drawer.setAttribute('aria-hidden','false'); document.getElementById('dClose').focus(); }
+  function closeDoc(){ drawer.classList.remove('on'); drawer.setAttribute('aria-hidden','true'); }
+  document.getElementById('dClose').addEventListener('click',closeDoc); document.getElementById('drawerBack').addEventListener('click',closeDoc);
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeDoc(); });
+  document.addEventListener('click',function(e){ var b=e.target.closest('.src,[data-opendoc]'); if(!b) return; openDoc(b.getAttribute('data-doc')||b.getAttribute('data-opendoc')); });
+  // lista de documentos
+  function docList(){ return Object.keys(DOCS).map(function(k){ var d=DOCS[k]; return '<li><span class="cls '+CLS[d.cls]+'">'+CLSTXT[d.cls]+'</span> <button data-opendoc="'+k+'">'+d.nome+'</button> <span class="muted">'+esc(d.meta.split('·')[0])+'</span></li>'; }).join(''); }
+  document.getElementById('fontes').innerHTML=docList(); document.getElementById('doclistAll').innerHTML=docList();
+  document.getElementById('sysPrompt').textContent=SYS; document.getElementById('cmd1').textContent=SYS; document.getElementById('maskedDocs').textContent=docsTexto(true);
+
+  // ---------- Navegação ----------
+  var views=['inicio','carteira','ficha','assistente','passagem','blueprint','memoria','trajetoria','dados','bastidores'];
+  function show(n){ if(views.indexOf(n)<0) n='inicio'; views.forEach(function(v){ document.getElementById('v-'+v).classList.toggle('on',v===n); }); document.querySelectorAll('header nav a').forEach(function(a){ if(a.getAttribute('href')==='#'+n) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); }); window.scrollTo(0,0); closeDoc(); }
+  window.addEventListener('hashchange',function(){ show((location.hash||'#inicio').slice(1)); });
+  document.getElementById('v-bastidores').querySelector('.subnav').addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b) return; var s=b.getAttribute('data-sub'); document.querySelectorAll('.subnav button').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false');}); document.querySelectorAll('.sub').forEach(function(x){x.classList.toggle('on',x.id==='sub-'+s);}); });
+
+  // ---------- Carteira ----------
+  var filtro='all';
+  function lacAbertas(){ var n=0; Object.keys(LAC).forEach(function(k){ LAC[k].forEach(function(_,i){ if(!store.done[k+'-'+i]) n++; }); }); Object.keys(store.extra).forEach(function(k){ (store.extra[k]||[]).forEach(function(_,i){ if(!store.done['x-'+k+'-'+i]) n++; }); }); return n; }
+  function renderCarteira(){
+    if(typeof renderVuln==='function'&&document.getElementById('vuln')) renderVuln();
+    var tb=document.querySelector('#tbl tbody'); tb.innerHTML=''; var red=0,v60=0;
+    conv.forEach(function(c){ var f=faixa(c), al=alertas(c); if(f==='r') red++; if((dias(c.vig)>=0&&dias(c.vig)<=60)||(c.pc&&dias(c.pc)>=0&&dias(c.pc)<=60)) v60++;
+      var ok=filtro==='all'||filtro===f||(filtro==='sem'&&c.resp==='Ricardo'); if(!ok) return;
+      var tr=document.createElement('tr'); tr.className='row'; tr.tabIndex=0;
+      tr.innerHTML='<td>'+c.id+'</td><td>'+c.obj+'</td><td>'+c.conc+'</td><td>'+br(c.vig)+(dias(c.vig)<0?' <span class="tag r">vencida</span>':'')+'</td><td>'+(c.pc?br(c.pc):'<span class="nc">em branco</span>')+'</td><td>'+(c.resp==='Ricardo'?'<span class="nc">Ricardo Prado (exonerado)</span>':NOME[c.resp])+'</td><td><span class="tag '+f+'">'+FX[f]+'</span></td><td class="alerts">'+(al.join('; ')||'—')+'</td>';
+      var go=function(){ sel.value=c.id; renderFicha(); location.hash='#ficha'; }; tr.addEventListener('click',go); tr.addEventListener('keydown',function(ev){ if(ev.key==='Enter') go(); });
+      tb.appendChild(tr); });
+    document.getElementById('k-red').textContent=red; document.getElementById('k-60').textContent=v60; document.getElementById('k-lac').textContent=lacAbertas();
+  }
+  document.getElementById('filters').addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b) return; filtro=b.getAttribute('data-f'); document.querySelectorAll('#filters button').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false');}); renderCarteira(); });
+
+  // ---------- Ficha ----------
+  var sel=document.getElementById('selconv'); conv.forEach(function(c){ var o=document.createElement('option'); o.value=c.id; o.textContent=c.id+' · '+c.obj; sel.appendChild(o); }); sel.value='03';
+  var dlg=document.getElementById('dlg'), dlgCb=null;
+  document.getElementById('dlgCancel').addEventListener('click',function(){ dlg.close(); if(dlgCb) dlgCb(null); });
+  document.getElementById('dlgOk').addEventListener('click',function(){ var v=document.getElementById('dlgIn').value.trim(); dlg.close(); if(dlgCb) dlgCb(v||null); });
+  function askOnde(cb){ dlgCb=cb; document.getElementById('dlgIn').value=''; if(dlg.showModal) dlg.showModal(); else cb(prompt('Onde o documento foi registrado?')); }
+  function renderFicha(){
+    var c=conv.filter(function(x){return x.id===sel.value;})[0]; var f=fichaDe(c), fx=faixa(c);
+    document.getElementById('faixa').innerHTML='<span class="tag '+fx+'">'+FX[fx]+'</span> <span class="muted">'+alertas(c).join('; ')+'</span>';
+    document.getElementById('fichaCard').innerHTML='<h2>Convênio '+c.id+' · '+c.obj+'</h2><p class="muted">'+c.conc+' · R$ '+c.val+' · ficha gerada pela IA em 10/11/2026 '+(store.confirm[c.id]?'· <span class="tag pessoa">confirmada pelo responsável</span>':'· <span class="tag a">minuta, não confirmada</span>')+'</p><dl><dt>Onde estamos</dt><dd>'+f.onde+'</dd><dt>Por que chegamos aqui</dt><dd>'+f.porque+'</dd><dt>O que vence em 60 dias</dt><dd>'+f.vence+'</dd><dt>Quem sabe resolver</dt><dd>'+f.quem+'</dd></dl>';
+    var ul=document.getElementById('tasks'); ul.innerHTML='';
+    var itens=(LAC[c.id]||[]).map(function(l,i){return {k:c.id+'-'+i,t:l.t,who:l.who};}).concat(LAC.todos.map(function(l,i){return {k:'todos-'+i,t:l.t,who:l.who};})).concat((store.extra[c.id]||[]).map(function(t,i){return {k:'x-'+c.id+'-'+i,t:t,who:'registrada pelo assistente'};}));
+    if(!itens.length){ ul.innerHTML='<li class="empty">Nenhuma lacuna registrada para este convênio.</li>'; }
+    itens.forEach(function(it){ var li=document.createElement('li'); if(store.done[it.k]) li.className='done'; li.innerHTML='<input type="checkbox" '+(store.done[it.k]?'checked':'')+' aria-label="Resolvida"><div><span class="t">'+esc(it.t)+'</span><span class="who">a quem perguntar: '+esc(it.who)+'</span>'+(store.done[it.k]?'<span class="onde">registrado em: '+esc(store.done[it.k])+'</span>':'')+'</div>';
+      li.querySelector('input').addEventListener('change',function(ev){ if(ev.target.checked){ askOnde(function(v){ if(!v){ ev.target.checked=false; return; } store.done[it.k]=v; save(); toast('Lacuna fechada. No piloto, o documento entraria na base e a ficha seria refeita.'); renderFicha(); renderCarteira(); }); } else { delete store.done[it.k]; save(); renderFicha(); renderCarteira(); } }); ul.appendChild(li); });
+    document.getElementById('gerado').style.display='none'; document.getElementById('valid').style.display='none';
+  }
+  sel.addEventListener('change',renderFicha);
+
+  // ---------- IA ----------
+  var sample=null; var st=document.getElementById('sampleState'); st.textContent='Conectando à IA…';
+  try{ if(window.claude&&typeof window.claude.use==='function'){ window.claude.use('sample').then(function(s){ sample=s; st.textContent=s?'IA conectada. A primeira pergunta pede sua autorização; depois, as respostas são geradas em tempo real.':'IA indisponível nesta visualização. As respostas gravadas no teste continuam acessíveis pelas sugestões.'; }); } else { st.textContent='IA indisponível fora do claude.ai. As respostas gravadas no teste continuam acessíveis pelas sugestões.'; } }catch(e){ st.textContent='IA indisponível.'; }
+  var GRAV=[
+    {k:['prazo','03'],abst:false,a:'Há divergência. A planilha registra 15/12/2026 [Planilha]. O e-mail do concedente, de 05/11/2026, fixa 30 dias contados da notificação, o que resulta em 05/12/2026 [E-mail]. Os documentos não permitem decidir qual prevalece; o e-mail é posterior e vem do concedente. A quem perguntar: Gerência de Convênios da SEDR [E-mail].'},
+    {k:['aditivo','07'],abst:true,a:'Não consta nos documentos. A ata de 12/03/2026 registra a decisão de solicitar aditivo de 180 dias e o encaminhamento para que Ricardo Prado elaborasse o ofício até 31/03/2026 [Ata]. Nenhum documento confirma o protocolo nem a resposta do MDS. A quem perguntar: Jonas Teixeira, que reuniu a documentação [Ata], ou o setor de protocolo.'},
+    {k:['coordenador','hoje'],abst:true,a:'Não consta nos documentos. Ricardo Prado foi exonerado com efeitos a partir de 05/11/2026 [Portaria]. Carla Menezes respondeu pela coordenação apenas de 10 a 24/08/2026, durante férias [Memorando]; esse memorando não se aplica à situação atual. A quem perguntar: Secretário Municipal de Administração [Memorando].'},
+    {k:['vence','dezembro'],abst:false,a:'Convênio 09: prestação de contas em 29/11/2026, vigência encerrada em 30/09 [Planilha]. Convênio 05: fim da vigência em 30/11/2026; prazo de prestação de contas em branco [Planilha]. Convênio 03: prestação de contas em 05/12 [E-mail] ou 15/12 [Planilha], em divergência. Convênios 06 e 07: fim da vigência em 31/12/2026 [Planilha]; no 07, depende de um aditivo cujo desfecho não consta [Ata].'},
+    {k:['pago','03'],abst:true,a:'Não consta nos documentos. A planilha traz o valor total, R$ 1.200.000, e a vigência [Planilha]; o e-mail trata do prazo de prestação de contas [E-mail]. Nenhum documento informa valores pagos ou saldo. A quem perguntar: setor financeiro, com os extratos da conta específica (item 3 do checklist) [Checklist].'},
+    {k:['telefone','fornecedor'],abst:true,a:'Não consta nos documentos recebidos. A ata cita um fornecedor pessoa física e um telefone, mas ambos foram removidos antes do envio por proteção de dados: aparecem como [fornecedor pessoa física] e [telefone pessoal removido] [Ata]. Quem tiver acesso ao processo pode consultar a ata original; o contato não deve ser reproduzido fora dele.'}
+  ];
+  function gravada(q){ var l=q.toLowerCase(); return GRAV.filter(function(g){ return g.k.every(function(w){return l.indexOf(w)>=0;}); })[0]||null; }
+  var chat=document.getElementById('chat');
+  function addMsg(cls,html){ var e=chat.querySelector('.empty'); if(e) e.remove(); var d=document.createElement('div'); d.className='msg '+cls; d.innerHTML=html; chat.appendChild(d); chat.scrollTop=chat.scrollHeight; return d; }
+  function audit(q,abst,origem){ store.audit.unshift({t:new Date().toLocaleString('pt-BR'),q:q,abst:abst,o:origem}); store.audit=store.audit.slice(0,12); save(); renderAudit(); }
+  function renderAudit(){ var ul=document.getElementById('auditLog'); ul.innerHTML=store.audit.length?store.audit.map(function(a){ return '<li>'+a.t+' · usuária: quem assume · docs lidos: 6 · '+(a.abst?'<span class="nc">sem resposta → tarefa</span>':'respondida')+' · <em>'+esc(a.q)+'</em> <span class="muted">('+a.o+')</span></li>'; }).join(''):'<li class="empty" style="list-style:none; margin-left:-1.1rem">Nenhuma consulta registrada ainda.</li>'; }
+  renderAudit();
+  function registrarLacuna(q){ var c=sel.value; store.extra[c]=store.extra[c]||[]; store.extra[c].push('Pergunta sem resposta no assistente: “'+q+'”'); save(); renderFicha(); renderCarteira(); }
+  function render(out,txt,abst,meta){ out.className='msg a'+(abst?' abst':''); out.innerHTML=linkSrc(txt)+'<span class="meta">'+meta+'</span>'; }
+  function perguntar(q){
+    if(!q.trim()) return; addMsg('q',esc(q)); var g=gravada(q);
+    if(sample){
+      var out=addMsg('a','Consultando os documentos…');
+      sample([{role:'user',content:SYS+'\n\nDOCUMENTOS:\n'+docsTexto(true)+'\n\nPERGUNTA: '+q}],{onText:function(e){ out.textContent=e.text||'…'; },cache:false}).then(function(r){
+        var txt=r.text||''; var abst=/n[ãa]o consta/i.test(txt);
+        render(out,txt,abst,'gerada agora pelo Claude a partir dos 6 documentos tratados · minuta: confirme antes de agir'+(abst?' · registrada como lacuna na ficha do convênio '+sel.value:''));
+        if(abst) registrarLacuna(q); audit(q,abst,'IA ao vivo');
+      }).catch(function(err){ if(g){ render(out,g.a,g.abst,'a IA ao vivo não respondeu ('+(err&&err.code||'erro')+'); resposta gravada na execução do teste'); audit(q,g.abst,'gravada'); } else { out.className='msg a abst'; out.textContent='A IA não respondeu ('+(err&&err.code||'erro')+'). Tente novamente.'; } });
+    } else if(g){ var d=addMsg('a',''); render(d,g.a,g.abst,'resposta gravada na execução documentada do teste (IA ao vivo indisponível aqui)'); if(g.abst) registrarLacuna(q); audit(q,g.abst,'gravada'); }
+    else { addMsg('a abst','A IA ao vivo não está disponível nesta visualização e esta pergunta não está entre as respostas gravadas. Abra a página no claude.ai para perguntar livremente.'); }
+  }
+  document.getElementById('askForm').addEventListener('submit',function(e){ e.preventDefault(); var q=document.getElementById('q').value; document.getElementById('q').value=''; perguntar(q); });
+  document.getElementById('sugest').addEventListener('click',function(e){ var b=e.target.closest('button'); if(b) perguntar(b.textContent); });
+  document.getElementById('btnGerar').addEventListener('click',function(){
+    var c=conv.filter(function(x){return x.id===sel.value;})[0]; var out=document.getElementById('gerado'); out.style.display='block'; out.className='msg a';
+    var pedido='Monte a ficha do convênio '+c.id+' ('+c.obj+') com quatro campos: Onde estamos; Por que chegamos aqui; O que vence nos próximos 60 dias (até 09/01/2027); Quem sabe resolver. Liste ao final as divergências entre documentos, se houver.';
+    if(!sample){ var f=fichaDe(c); out.innerHTML='<strong>IA ao vivo indisponível aqui.</strong> Ficha produzida na execução documentada do teste:<br><br><strong>Onde estamos.</strong> '+f.onde+'<br><strong>Por que chegamos aqui.</strong> '+f.porque+'<br><strong>O que vence.</strong> '+f.vence+'<br><strong>Quem sabe resolver.</strong> '+f.quem; document.getElementById('valid').style.display='block'; return; }
+    out.textContent='Lendo os seis documentos…';
+    sample([{role:'user',content:SYS+'\n\nDOCUMENTOS:\n'+docsTexto(true)+'\n\nTAREFA: '+pedido}],{onText:function(e){ out.textContent=e.text||'…'; },cache:false}).then(function(r){ render(out,r.text||'',false,'gerada agora pelo Claude · compare com a ficha ao lado, produzida na execução documentada'); document.getElementById('valid').style.display='block'; audit('Gerar ficha do convênio '+c.id,false,'IA ao vivo'); }).catch(function(err){ out.className='msg a abst'; out.textContent='A IA não respondeu ('+(err&&err.code||'erro')+').'; });
+  });
+  document.getElementById('btnConfirm').addEventListener('click',function(){ store.confirm[sel.value]=true; save(); toast('Ficha confirmada como registro. No piloto, isso grava autor, data e versão.'); renderFicha(); });
+
+  // ---------- Passagem ----------
+  var HO=[{k:'h1',t:'Sei qual é o prazo mais urgente e com quem confirmá-lo (convênio 03)'},{k:'h2',t:'Sei o que falta para a prestação de contas do convênio 03, incluindo o comprovante do portal'},{k:'h3',t:'Sei a quem perguntar sobre o aditivo do convênio 07 e o que foi decidido em março'},{k:'h4',t:'Sei quais convênios estão sem prazo de prestação de contas (05 e 11) e como obtê-lo'},{k:'h5',t:'Sei que não há coordenador formal desde 05/11 e pedi a formalização'},{k:'h6',t:'Li a lista de lacunas e aceito que ela é meu plano de documentação dos próximos 60 dias'}];
+  function renderHO(){ var ul=document.getElementById('handover'); ul.innerHTML=''; var n=0; HO.forEach(function(h){ var li=document.createElement('li'); if(store.ho[h.k]){li.className='done';n++;} li.innerHTML='<input type="checkbox" '+(store.ho[h.k]?'checked':'')+' aria-label="Validado"><div><span class="t">'+h.t+'</span></div>'; li.querySelector('input').addEventListener('change',function(ev){ store.ho[h.k]=ev.target.checked; save(); renderHO(); if(ev.target.checked&&Object.keys(store.ho).filter(function(k){return store.ho[k];}).length===HO.length) toast('Passagem validada por quem assume.'); }); ul.appendChild(li); });
+    document.getElementById('hoState').textContent=n===HO.length?'Passagem validada. No piloto, isso grava uma versão imutável com data, autor e pendências reconhecidas.':n+' de '+HO.length+' itens validados. A passagem fecha quando quem assume confirma todos, não quando o antecessor entrega.';
+    var dl=document.getElementById('doubts'); dl.innerHTML=store.doubts.length?store.doubts.map(function(d){return '<li>'+esc(d)+' <span class="muted">→ tarefa criada</span></li>';}).join(''):'<li class="empty" style="list-style:none; margin-left:-1.1rem">Nenhuma dúvida registrada.</li>'; }
+  document.getElementById('doubtForm').addEventListener('submit',function(e){ e.preventDefault(); var v=document.getElementById('doubt').value.trim(); if(!v) return; store.doubts.push(v); store.extra.todos=store.extra.todos||[]; document.getElementById('doubt').value=''; save(); renderHO(); toast('Dúvida registrada como tarefa.'); });
+
+
+  // ---------- Memória: decisões, entrevista, vulnerabilidades ----------
+  store.dec=store.dec||[];
+  function renderDec(){ var ul=document.getElementById('decList'); ul.innerHTML=store.dec.length?store.dec.map(function(d){ return '<li><strong>'+esc(d.q)+'</strong> — '+esc(d.why)+(d.alt?' · alternativas: '+esc(d.alt):'')+(d.rev?' · rever se: '+esc(d.rev):'')+' <span class="muted">('+(d.mem?'registro de memória':'com ata')+' · '+d.t+')</span></li>'; }).join(''):'<li class="empty" style="list-style:none; margin-left:-1.1rem">Nenhuma decisão registrada ainda. A da ata de 12/03 (aditivo do convênio 07) seria a primeira.</li>'; renderVuln(); }
+  document.getElementById('decForm').addEventListener('submit',function(e){ e.preventDefault(); store.dec.unshift({q:document.getElementById('decQ').value.trim(),why:document.getElementById('decWhy').value.trim(),alt:document.getElementById('decAlt').value.trim(),rev:document.getElementById('decRev').value.trim(),mem:document.getElementById('decMem').checked,t:new Date().toLocaleDateString('pt-BR')}); save(); e.target.reset(); renderDec(); toast('Decisão registrada. No piloto, entra na ficha do processo com autor e data.'); });
+  var consent=document.getElementById('consent'), btnR=document.getElementById('btnRoteiro'); consent.addEventListener('change',function(){ btnR.disabled=!consent.checked; });
+  btnR.addEventListener('click',function(){
+    var out=document.getElementById('roteiro'); out.style.display='block'; out.className='msg a';
+    var lac=[]; Object.keys(LAC).forEach(function(k){ LAC[k].forEach(function(l,i){ if(!store.done[k+'-'+i]) lac.push((k==='todos'?'Geral':'Convênio '+k)+': '+l.t+' (a quem perguntar: '+l.who+')'); }); });
+    var mapa='Processos de risco alto sem substituto: prestação de contas de convênios; acesso ao Transferegov e sistemas dos concedentes (credenciais no CPF do antigo gestor); relação com concedentes.';
+    var pedido='TAREFA: a partir das lacunas abertas e do mapa de conhecimento crítico abaixo, escreva um roteiro de entrevista de passagem com o coordenador que saiu, em até 10 perguntas, ordenadas por prazo e risco. Perguntas objetivas, uma por linha, cada uma indicando entre colchetes a lacuna ou o processo de origem. Não pergunte nada que não decorra das lacunas ou do mapa. Comece com uma frase lembrando que a participação é voluntária.\n\nLACUNAS ABERTAS:\n'+lac.join('\n')+'\n\nMAPA DE CONHECIMENTO CRÍTICO:\n'+mapa;
+    if(!sample){ out.innerHTML='<strong>IA ao vivo indisponível aqui.</strong> Com a IA conectada, o roteiro é gerado a partir das '+lac.length+' lacunas abertas e do mapa. Exemplo do que sai: “O ofício de aditivo do convênio 07 foi protocolado? Onde está o comprovante?” [Convênio 07]; “Quem ficou com o perfil de gestor no Transferegov?” [acesso aos sistemas].'; return; }
+    out.textContent='Montando o roteiro a partir das lacunas…';
+    sample([{role:'user',content:SYS+'\n\n'+pedido}],{onText:function(e){ out.textContent=e.text||'…'; },cache:false}).then(function(r){ render(out,r.text||'',false,'gerado agora pelo Claude a partir de '+lac.length+' lacunas abertas e do mapa · a entrevista e o resumo só existem com consentimento'); audit('Gerar roteiro de entrevista de passagem',false,'IA ao vivo'); }).catch(function(err){ out.className='msg a abst'; out.textContent='A IA não respondeu ('+(err&&err.code||'erro')+').'; });
+  });
+  function renderVuln(){ var semSub=conv.filter(function(c){return c.resp==='Ricardo';}).length; var naoConf=conv.filter(function(c){return !store.confirm[c.id];}).length; var semDoc=conv.filter(function(c){return c.pc&&dias(c.pc)>=0&&dias(c.pc)<=60;}).length; var ul=document.getElementById('vuln'); ul.innerHTML='<li><strong>'+semSub+'</strong> convênios cujo responsável foi exonerado sem substituto registrado</li><li><strong>3</strong> processos de risco alto no mapa sem substituto</li><li><strong>'+semDoc+'</strong> prazos de prestação de contas em 60 dias sem documento de prestação na base</li><li><strong>'+lacAbertas()+'</strong> lacunas abertas; <strong>'+(store.dec.length)+'</strong> decisões registradas</li><li><strong>'+naoConf+'</strong> de 14 fichas ainda não confirmadas pelo responsável formal</li><li><strong>1</strong> checklist operacional desatualizado há mais de dois anos</li>'; }
+  renderDec();
+  renderCarteira(); renderFicha(); renderHO(); show((location.hash||'#inicio').slice(1));
+})();
+</script>
+</body>
+</html>
